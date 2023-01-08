@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# My project
+Loke's project
+data
+gekko_prueba.ipynb
+pruebas.ipynb
