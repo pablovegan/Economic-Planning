@@ -72,6 +72,7 @@ class OptimizePlan:
         """
         variables = []
         for i in range(self.plan_periods + self.horizon_periods - 1):
+            # ! Añadir los nombres de las variables del otro excel
             variables.append(Variable(self.num_units, name=f'x{i}'))
         return variables
 
