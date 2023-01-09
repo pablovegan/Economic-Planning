@@ -57,8 +57,9 @@ class OptimizePlan:
         self.num_products = econ.supply_use.shape[0]
         self.num_units = econ.supply_use.shape[1]
 
-        self.variables = self._variables()
+        self.variables = self._variables
 
+    @property
     def _variables(self) -> list[Variable]:
         """
         The unkwown variables in our model represent the level
