@@ -4,7 +4,7 @@ from os.path import join
 from pickle import dump
 
 from numpy import eye
-from pandas import DataFrame, read_excel
+from pandas import DataFrame, Series, read_excel, concat
 from scipy.sparse import csr_matrix
 
 
@@ -27,7 +27,6 @@ def load_excel(sheet_path: str,
 if __name__ == '__main__':
 
     print('Starting...')
-    time_steps = 3
 
     use_imported, supply_use = [], []
     export_prices, import_prices = [], []
@@ -56,14 +55,13 @@ if __name__ == '__main__':
         export_output.append(load_excel(excel_path, sheet_name, 4, 78, 63, 78).flatten())
         worked_hours.append(load_excel(excel_path, sheet_name, 69, 3, 69, 61).flatten())
 
-    depreciation = csr_matrix(eye(supply_use[0].shape[0]))
-
+    # ! Depreciation matrix != Id may lead to infeasible solutions
+    depreciation = 0.95 * csr_matrix(eye(supply_use[0].shape[0]))
     depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
-    # Human services cannot be stored for the next period
     for i in range(27, 59):
-        depreciation[i, i] = 0.1
+        depreciation[i, i] = 0.3  # Human services cannot be stored for the next period
 
-    # * añadimos unos años interpolados para tener más datos
+    # Interpolate years to have more data
     for i in range(len(sheet_names) - 1):
         idx = 2 * i + 1
         supply_use.insert(idx, (supply_use[i + 1] + supply_use[i]) / 2)
@@ -87,5 +85,18 @@ if __name__ == '__main__':
 
     with open(join('example', 'data', 'swedish_economy.pkl'), 'wb') as file:
         dump(economy, file)
+
+    # Now we save the names of each product/sector
+    excel_path = join('example', 'data', 'posternas_namn.xlsx')
+    product_names = read_excel(excel_path,
+                               sheet_name='SUP10',
+                               usecols=range(3 - 1, 3),
+                               skiprows=range(7 - 2),
+                               nrows=65 - 7 + 1)
+    # Convert pandas dataframe to series
+    product_names = product_names.squeeze()
+    product_names = concat([product_names, Series(['CO2'])], ignore_index=True)  # add CO2
+    with open(join('example', 'data', 'swedish_product_names.pkl'), 'wb') as file:
+        dump(product_names, file)
 
     print('Finished.')

@@ -125,8 +125,8 @@ class OptimizePlan:
 
     def __call__(self,
                  excess_prod: Optional[ndarray] = None,
-                 export_deficit: Optional[ndarray] = None
-                 ) -> tuple[ndarray, ...]:
+                 export_deficit: Optional[float] = None
+                 ) -> None:
         """
         Optimize the plan over the specified periods and horizon.
 
@@ -171,7 +171,7 @@ class OptimizePlan:
         self.excess_prod = array(self.excess_prod).T
         self.export_deficit = array(self.export_deficit).T
 
-    def _optimize_period(self, excess_prod: ndarray, export_deficit: ndarray) -> None:
+    def _optimize_period(self, excess_prod: ndarray, export_deficit: float) -> None:
         """Optimize one period of the plan."""
         problem = Problem(Minimize(self._cost),
                           self._constraints(excess_prod, export_deficit))
@@ -193,7 +193,7 @@ class OptimizePlan:
                 self.worked_hours.append(worked_hours)
         return cost
 
-    def _constraints(self, excess_prod: ndarray, export_deficit: ndarray) -> list:
+    def _constraints(self, excess_prod: ndarray, export_deficit: float) -> list:
         """Create a list of constraints for the plan and save
             the excess and planned production."""
         constr_list = []
@@ -213,10 +213,6 @@ class OptimizePlan:
             export_deficit = export_deficit + total_export - total_import
             # We limit export deficit
             constr_list.append(export_deficit >= -1e6)
-            # ? revisar, sale negativo. Es posible que planifique para importar al principio
-            # ? y luego exportar, pero claro las exportaciones no las llega a ejecutar
-            # ? y en la siguiente ronda lo mismo
-            # TODO: añadir un límite al deficit en cada tiempo
             # We record the planned prod, excess prod and trade deficit in the revised periods
             if t <= self.iter_period + self.revise_periods - 1 and t <= self.plan_periods - 1:
                 self.excess_prod.append(excess_prod)
