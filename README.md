@@ -1,3 +1,3 @@
 # Horizon-Planning
-Receding horizon planning as in Loke and Zachariah's paper
+Receding horizon planning as in Loke and Dave's
 https://github.com/lokehagberg/rhp
