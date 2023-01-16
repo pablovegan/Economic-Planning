@@ -8,36 +8,33 @@ from pandas import DataFrame, Series, read_excel, concat
 from scipy.sparse import csr_matrix
 
 
-def load_excel(sheet_path: str,
-               sheet_name: str,
-               min_row: int,
-               min_col: int,
-               max_row: int,
-               max_col: int
-               ) -> DataFrame:
+def load_excel(
+    sheet_path: str, sheet_name: str, min_row: int, min_col: int, max_row: int, max_col: int
+) -> DataFrame:
     """Load an excel sheet given the rows and columns."""
-    df = read_excel(sheet_path,
-                    sheet_name=sheet_name,
-                    usecols=range(min_col - 1, max_col),
-                    skiprows=range(min_row - 2),
-                    nrows=max_row - min_row + 1)
+    df = read_excel(
+        sheet_path,
+        sheet_name=sheet_name,
+        usecols=range(min_col - 1, max_col),
+        skiprows=range(min_row - 2),
+        nrows=max_row - min_row + 1,
+    )
     return df.to_numpy()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    print('Starting...')
+    print("Starting...")
 
     use_imported, supply_use = [], []
     export_prices, import_prices = [], []
     export_output, target_output = [], []
     worked_hours = []
 
-    sheet_names = ['2008', '2009', '2010', '2011', '2012',
-                   '2013', '2014', '2015', '2016']
+    sheet_names = ["2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016"]
 
     for sheet_name in sheet_names:
-        excel_path = join('example', 'data', 'nrio_sut_181108.xlsx')
+        excel_path = join("example", "data", "nrio_sut_181108.xlsx")
 
         supply_matrix = csr_matrix(load_excel(excel_path, sheet_name, 159, 3, 218, 61))
 
@@ -74,29 +71,31 @@ if __name__ == '__main__':
 
     economy = {}
 
-    economy['supply_use'] = supply_use
-    economy['use_imported'] = use_imported
-    economy['export_prices'] = export_prices
-    economy['import_prices'] = import_prices
-    economy['export_output'] = export_output
-    economy['target_output'] = target_output
-    economy['depreciation'] = depreciation
-    economy['worked_hours'] = worked_hours
+    economy["supply_use"] = supply_use
+    economy["use_imported"] = use_imported
+    economy["export_prices"] = export_prices
+    economy["import_prices"] = import_prices
+    economy["export_output"] = export_output
+    economy["target_output"] = target_output
+    economy["depreciation"] = depreciation
+    economy["worked_hours"] = worked_hours
 
-    with open(join('example', 'data', 'swedish_economy.pkl'), 'wb') as file:
+    with open(join("example", "data", "swedish_economy.pkl"), "wb") as file:
         dump(economy, file)
 
     # Now we save the names of each product/sector
-    excel_path = join('example', 'data', 'posternas_namn.xlsx')
-    product_names = read_excel(excel_path,
-                               sheet_name='SUP10',
-                               usecols=range(3 - 1, 3),
-                               skiprows=range(7 - 2),
-                               nrows=65 - 7 + 1)
+    excel_path = join("example", "data", "posternas_namn.xlsx")
+    product_names = read_excel(
+        excel_path,
+        sheet_name="SUP10",
+        usecols=range(3 - 1, 3),
+        skiprows=range(7 - 2),
+        nrows=65 - 7 + 1,
+    )
     # Convert pandas dataframe to series
     product_names = product_names.squeeze()
-    product_names = concat([product_names, Series(['CO2'])], ignore_index=True)  # add CO2
-    with open(join('example', 'data', 'swedish_product_names.pkl'), 'wb') as file:
+    product_names = concat([product_names, Series(["CO2"])], ignore_index=True)  # add CO2
+    with open(join("example", "data", "swedish_product_names.pkl"), "wb") as file:
         dump(product_names, file)
 
-    print('Finished.')
+    print("Finished.")

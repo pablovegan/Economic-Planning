@@ -17,9 +17,11 @@ class InfeasibleProblem(Exception):
     """Exception raised for infeasible LP problems in the input salary."""
 
     def __init__(self, iter):
-        self.message = (f"LP problem in iteration period {iter} couldn't"
-                        " be solved. You may try increasing the horizon periods"
-                        " or the initial excess production.")
+        self.message = (
+            f"LP problem in iteration period {iter} couldn't"
+            " be solved. You may try increasing the horizon periods"
+            " or the initial excess production."
+        )
         super().__init__(self.message)
 
 
@@ -62,17 +64,24 @@ class OptimizePlan:
         level of activation of each production unit.
     """
 
-    __slots__ = ('plan_periods', 'horizon_periods', 'revise_periods',
-                 'econ', 'num_products', 'num_units', 'worked_hours',
-                 'planned_activity', 'excess_prod', 'planned_prod',
-                 'export_deficit', 'variables', 'iter_period', '__dict__')
+    __slots__ = (
+        "plan_periods",
+        "horizon_periods",
+        "revise_periods",
+        "econ",
+        "num_products",
+        "num_units",
+        "worked_hours",
+        "planned_activity",
+        "excess_prod",
+        "planned_prod",
+        "export_deficit",
+        "variables",
+        "iter_period",
+        "__dict__",
+    )
 
-    def __init__(self,
-                 plan_periods: int,
-                 horizon_periods: int,
-                 revise_periods: int,
-                 econ: dict
-                 ):
+    def __init__(self, plan_periods: int, horizon_periods: int, revise_periods: int, econ: dict):
         """
         Parameters
         ----------
@@ -90,8 +99,8 @@ class OptimizePlan:
         self.revise_periods = revise_periods
 
         self.econ = econ
-        self.num_products = econ['supply_use'][0].shape[0]
-        self.num_units = econ['supply_use'][0].shape[1]
+        self.num_products = econ["supply_use"][0].shape[0]
+        self.num_units = econ["supply_use"][0].shape[1]
 
         self._assert_plan()  # Assert the time periods are compatible
 
@@ -105,14 +114,16 @@ class OptimizePlan:
 
     def _assert_plan(self):
         "Assert that the time periods are compatible."
-        assert self.revise_periods <= self.horizon_periods, (
-            "Number of revise periods must be less or equal the number of horizon periods.")
+        assert (
+            self.revise_periods <= self.horizon_periods
+        ), "Number of revise periods must be less or equal the number of horizon periods."
 
         min_iter = ceil(self.plan_periods / self.revise_periods)
         min_periods = self.revise_periods * (min_iter - 1) + self.horizon_periods
-        assert min_periods <= len(self.econ['supply_use']), (
+        assert min_periods <= len(self.econ["supply_use"]), (
             "The number of periods provided in the economy must be greater"
-            "or equal to the number of periods we need to optimize our plan.")
+            "or equal to the number of periods we need to optimize our plan."
+        )
 
     @property
     def _variables(self) -> list[Variable]:
@@ -120,13 +131,12 @@ class OptimizePlan:
         horizon plan, which are the variables we want to solve for in our problem."""
         variables = []
         for i in range(self.plan_periods + self.horizon_periods - 1):
-            variables.append(Variable(self.num_units, name=f'x{i}'))
+            variables.append(Variable(self.num_units, name=f"x{i}"))
         return variables
 
-    def __call__(self,
-                 excess_prod: Optional[ndarray] = None,
-                 export_deficit: Optional[float] = None
-                 ) -> None:
+    def __call__(
+        self, excess_prod: Optional[ndarray] = None, export_deficit: Optional[float] = None
+    ) -> None:
         """
         Optimize the plan over the specified periods and horizon.
 
@@ -136,12 +146,6 @@ class OptimizePlan:
             The remaining production at the initial time period.
         export_deficit : arraylike
             The export deficit at the initial time period.
-
-        Returns
-        -------
-        tuple[ndarray, ...]
-            The planned activity of each production unit, the planned production
-            and the total worked hours for each planned period.
         """
         excess_prod = zeros(self.num_products) if excess_prod is None else excess_prod
         export_deficit = zeros(self.num_products) if export_deficit is None else export_deficit
@@ -173,11 +177,10 @@ class OptimizePlan:
 
     def _optimize_period(self, excess_prod: ndarray, export_deficit: float) -> None:
         """Optimize one period of the plan."""
-        problem = Problem(Minimize(self._cost),
-                          self._constraints(excess_prod, export_deficit))
+        problem = Problem(Minimize(self._cost), self._constraints(excess_prod, export_deficit))
         problem.solve(verbose=False)
         if problem.status in ["infeasible", "unbounded"]:
-            print(f'Problem value is {problem.value}.')
+            print(f"Problem value is {problem.value}.")
             raise InfeasibleProblem(self.iter_period)
 
     @property
@@ -186,7 +189,7 @@ class OptimizePlan:
         the total worked hours in each period."""
         cost = 0
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
-            worked_hours = self.econ['worked_hours'][t] @ self.variables[t]
+            worked_hours = self.econ["worked_hours"][t] @ self.variables[t]
             cost += worked_hours
             # Record the worked hours in each period
             if t <= self.iter_period + self.revise_periods - 1:
@@ -195,21 +198,25 @@ class OptimizePlan:
 
     def _constraints(self, excess_prod: ndarray, export_deficit: float) -> list:
         """Create a list of constraints for the plan and save
-            the excess and planned production."""
+        the excess and planned production."""
         constr_list = []
 
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
             # Production must be positive
             constr_list.append(self.variables[t] >= 0)
             # We must produce more than the target output
-            planned_prod = self.econ['supply_use'][t] @ self.variables[t]
-            excess_prod = (self.econ['depreciation'] @ excess_prod +
-                           planned_prod - self.econ['target_output'][t])
+            planned_prod = self.econ["supply_use"][t] @ self.variables[t]
+            excess_prod = (
+                self.econ["depreciation"] @ excess_prod
+                + planned_prod
+                - self.econ["target_output"][t]
+            )
             constr_list.append(excess_prod >= 0)
             # We must export more than we import at the end of the horizon
-            total_import = (self.econ['import_prices'][t] @
-                            self.econ['use_imported'][t] @ self.variables[t])
-            total_export = self.econ['export_prices'][t] @ self.econ['export_output'][t]
+            total_import = (
+                self.econ["import_prices"][t] @ self.econ["use_imported"][t] @ self.variables[t]
+            )
+            total_export = self.econ["export_prices"][t] @ self.econ["export_output"][t]
             export_deficit = export_deficit + total_export - total_import
             # We limit export deficit
             constr_list.append(export_deficit >= -1e6)
