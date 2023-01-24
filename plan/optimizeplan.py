@@ -78,10 +78,18 @@ class OptimizePlan:
         "export_deficit",
         "variables",
         "iter_period",
+        "constraints_dict",
         "__dict__",
     )
 
-    def __init__(self, plan_periods: int, horizon_periods: int, revise_periods: int, econ: dict):
+    def __init__(
+        self,
+        plan_periods: int,
+        horizon_periods: int,
+        revise_periods: int,
+        econ: dict,
+        constraints_dict: dict = {"production_constraints": True, "export_constraints": True},
+    ):
         """
         Parameters
         ----------
@@ -111,6 +119,8 @@ class OptimizePlan:
         self.excess_prod = []
 
         self.variables = self._variables
+
+        self.constraints_dict = constraints_dict
 
     def _assert_plan(self):
         "Assert that the time periods are compatible."
@@ -199,32 +209,51 @@ class OptimizePlan:
     def _constraints(self, excess_prod: ndarray, export_deficit: float) -> list:
         """Create a list of constraints for the plan and save
         the excess and planned production."""
-        constr_list = []
+        constraints = self._activity_constraints()
+        if self.constraints_dict["production_constraints"] is True:
+            constraints += self._production_constraints(excess_prod)
+        if self.constraints_dict["export_constraints"] is True:
+            constraints += self._export_constraints(export_deficit)
+        return constraints
 
+    def _activity_constraints(self) -> list:
+        """Production activity must be positive."""
+        constraints = []
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
-            # Production must be positive
-            constr_list.append(self.variables[t] >= 0)
-            # We must produce more than the target output
+            constraints.append(self.variables[t] >= 0)
+        return constraints
+
+    def _production_constraints(self, excess_prod: ndarray) -> list:
+        """We must produce more than the target output."""
+        constraints = []
+        for t in range(self.iter_period, self.iter_period + self.horizon_periods):
             planned_prod = self.econ["supply_use"][t] @ self.variables[t]
             excess_prod = (
                 self.econ["depreciation"] @ excess_prod
                 + planned_prod
                 - self.econ["target_output"][t]
             )
-            constr_list.append(excess_prod >= 0)
-            # We must export more than we import at the end of the horizon
+            constraints.append(excess_prod >= 0)
+            # We record the planned prod, excess prod and trade deficit in the revised periods
+            if t <= self.iter_period + self.revise_periods - 1 and t <= self.plan_periods - 1:
+                self.excess_prod.append(excess_prod)
+                self.planned_prod.append(planned_prod)
+        return constraints
+
+    def _export_constraints(self, export_deficit: float) -> list:
+        """We must export more than we import at the end of the horizon."""
+        # TODO: add a vector of imports for final use (not for production)
+        constraints = []
+        for t in range(self.iter_period, self.iter_period + self.horizon_periods):
             total_import = (
                 self.econ["import_prices"][t] @ self.econ["use_imported"][t] @ self.variables[t]
             )
             total_export = self.econ["export_prices"][t] @ self.econ["export_output"][t]
             export_deficit = export_deficit + total_export - total_import
-            # We limit export deficit
-            constr_list.append(export_deficit >= -1e6)
+            constraints.append(export_deficit >= -1e6)  # We limit export deficit
+
             # We record the planned prod, excess prod and trade deficit in the revised periods
             if t <= self.iter_period + self.revise_periods - 1 and t <= self.plan_periods - 1:
-                self.excess_prod.append(excess_prod)
-                self.planned_prod.append(planned_prod)
                 self.export_deficit.append(export_deficit)
-
-        constr_list.append(export_deficit >= 0)
-        return constr_list
+        constraints.append(export_deficit >= 0)
+        return constraints
