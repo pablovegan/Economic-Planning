@@ -88,7 +88,7 @@ class OptimizePlan:
         horizon_periods: int,
         revise_periods: int,
         econ: dict,
-        constraints_dict: dict = {"production_constraints": True, "export_constraints": True},
+        constraints_dict: dict = {"export_constraints": True},
     ):
         """
         Parameters
@@ -164,34 +164,41 @@ class OptimizePlan:
             self.iter_period = i
             # Solve the linear programming problem
             self._optimize_period(excess_prod, export_deficit)
-            # Get the value of the quantities we are interested in
-            for r in range(self.revise_periods):
-                t = i + r
-                if t > self.plan_periods - 1:
-                    break
-                self.planned_activity.append(self.variables[t].value)
-                self.worked_hours[t] = self.worked_hours[t].value
-                self.excess_prod[t] = self.excess_prod[t].value
-                self.planned_prod[t] = self.planned_prod[t].value
-                self.export_deficit[t] = self.export_deficit[t].value
-
             # Excess production and export deficit initialization for the next iteration
             excess_prod = self.excess_prod[-1]
-            export_deficit = self.export_deficit[-1]
+            if self.constraints_dict["export_constraints"] is True:
+                export_deficit = self.export_deficit[-1]
 
+        # Convert the plan solutions to numpy arrays
         self.worked_hours = array(self.worked_hours)
         self.planned_activity = array(self.planned_activity).T
         self.planned_prod = array(self.planned_prod).T
         self.excess_prod = array(self.excess_prod).T
-        self.export_deficit = array(self.export_deficit).T
+        if self.constraints_dict["export_constraints"] is True:
+            self.export_deficit = array(self.export_deficit).T
 
+    # TODO: guardar aquí lo de guardar resultados de __call__
     def _optimize_period(self, excess_prod: ndarray, export_deficit: float) -> None:
         """Optimize one period of the plan."""
         problem = Problem(Minimize(self._cost), self._constraints(excess_prod, export_deficit))
         problem.solve(verbose=False)
+
         if problem.status in ["infeasible", "unbounded"]:
             print(f"Problem value is {problem.value}.")
             raise InfeasibleProblem(self.iter_period)
+
+        # Get the value of the quantities we are interested in
+        for r in range(self.revise_periods):
+            t = self.iter_period + r
+            if t > self.plan_periods - 1:
+                break
+            self.planned_activity.append(self.variables[t].value)
+            self.worked_hours[t] = self.worked_hours[t].value
+            self.excess_prod[t] = self.excess_prod[t].value
+            self.planned_prod[t] = self.planned_prod[t].value
+
+            if self.constraints_dict["export_constraints"] is True:
+                self.export_deficit[t] = self.export_deficit[t].value
 
     @property
     def _cost(self) -> Variable:
@@ -210,8 +217,7 @@ class OptimizePlan:
         """Create a list of constraints for the plan and save
         the excess and planned production."""
         constraints = self._activity_constraints()
-        if self.constraints_dict["production_constraints"] is True:
-            constraints += self._production_constraints(excess_prod)
+        constraints += self._production_constraints(excess_prod)
         if self.constraints_dict["export_constraints"] is True:
             constraints += self._export_constraints(export_deficit)
         return constraints
@@ -231,6 +237,7 @@ class OptimizePlan:
             excess_prod = (
                 self.econ["depreciation"] @ excess_prod
                 + planned_prod
+                + self.econ["imported_prod"][t]
                 - self.econ["target_output"][t]
             )
             constraints.append(excess_prod >= 0)

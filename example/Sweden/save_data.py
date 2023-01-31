@@ -80,8 +80,8 @@ if __name__ == "__main__":
     economy["depreciation"] = depreciation
     economy["worked_hours"] = worked_hours
 
-    with open(join("example", "data", "swedish_economy.pkl"), "wb") as file:
-        dump(economy, file)
+    with open(join("example", "data", "swedish_economy.pkl"), "wb") as f:
+        dump(economy, f)
 
     # Now we save the names of each product/sector
     excel_path = join("example", "data", "posternas_namn.xlsx")
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # Convert pandas dataframe to series
     product_names = product_names.squeeze()
     product_names = concat([product_names, Series(["CO2"])], ignore_index=True)  # add CO2
-    with open(join("example", "data", "swedish_product_names.pkl"), "wb") as file:
-        dump(product_names, file)
+    with open(join("example", "data", "swedish_product_names.pkl"), "wb") as f:
+        dump(product_names, f)
 
     print("Finished.")
