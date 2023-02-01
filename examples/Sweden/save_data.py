@@ -3,7 +3,7 @@
 from os.path import join
 from pickle import dump
 
-from numpy import eye, zeros
+import numpy as np
 from pandas import DataFrame, Series, read_excel, concat
 from scipy.sparse import csr_matrix
 
@@ -53,10 +53,10 @@ if __name__ == "__main__":
         export_output.append(load_excel(excel_path, sheet_name, 4, 78, 63, 78).flatten())
         worked_hours.append(load_excel(excel_path, sheet_name, 69, 3, 69, 61).flatten())
 
-        imported_prod.append(zeros(supply_use[0].shape[0]))
+        imported_prod.append(np.zeros(supply_use[0].shape[0]))  # ! Pending to add
 
     # ! Depreciation matrix != Id may lead to infeasible solutions
-    depreciation = 0.95 * csr_matrix(eye(supply_use[0].shape[0]))
+    depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
     depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
     for i in range(27, 59):
         depreciation[i, i] = 0.3  # Human services cannot be stored for the next period
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         export_output.insert(idx, (export_output[i + 1] + export_output[i]) / 2)
         target_output.insert(idx, (target_output[i + 1] + target_output[i]) / 2)
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
-        imported_prod.insert(idx, (imported_prod[i + 1] + imported_prod[i]) / 2)  # ! Unnecessary for swedish data!!
+        imported_prod.insert(idx, (imported_prod[i + 1] + imported_prod[i]) / 2)
 
     economy = {}
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     economy["target_output"] = target_output
     economy["depreciation"] = depreciation
     economy["worked_hours"] = worked_hours
-    economy["imported_prod"] = imported_prod  # ! Unnecessary for swedish data!!
+    economy["imported_prod"] = imported_prod
 
     with open(join("example", "Sweden", "data", "swedish_economy.pkl"), "wb") as f:
         dump(economy, f)

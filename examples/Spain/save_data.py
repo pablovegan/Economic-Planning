@@ -3,7 +3,7 @@
 from os.path import join
 from pickle import dump
 
-from numpy import eye, zeros
+import numpy as np
 from pandas import DataFrame, read_excel
 from scipy.sparse import csr_matrix
 
@@ -44,20 +44,20 @@ if __name__ == "__main__":
 
         supply_use.append(supply_matrix - use_matrix)
 
-        use_imported.append(zeros(use_matrix.shape))
+        use_imported.append(np.zeros(use_matrix.shape))
 
         imported_prod.append(load_excel(excel_path, "Table1", 10, 85, 119, 85).flatten())
 
-        export_prices.append(zeros(110))
-        import_prices.append(zeros(110))
+        export_prices.append(np.ones(110))
+        import_prices.append(np.ones(110))
 
         export_output.append(load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten())
-        
+
         worked_hours.append(load_excel(excel_path, "Table2", 134, 3, 134, 83).flatten())
 
     # ! Depreciation matrix != Id may lead to infeasible solutions
-    # depreciation = 0.95 * csr_matrix(eye(supply_use[0].shape[0]))
-    depreciation = csr_matrix(eye(supply_use[0].shape[0]))
+    # depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
+    depreciation = csr_matrix(np.eye(supply_use[0].shape[0]))
     """
     depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
     for i in range(27, 59):
