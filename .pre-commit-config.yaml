@@ -33,5 +33,10 @@ repos:
     rev: v0.991  # Use the sha / tag you want to point at
     hooks:
     -   id: mypy
-        args: [--no-strict-optional, --ignore-missing-imports, --check-untyped-defs]
+        args: [--no-strict-optional,
+               --ignore-missing-imports,
+               --check-untyped-defs,
+               --allow-redefinition,
+               --disallow-incomplete-defs
+               ]
         exclude: ^docs/

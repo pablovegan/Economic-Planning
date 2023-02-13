@@ -6,17 +6,22 @@ Classes
 InfeasibleProblem
 OptimizePlan
 """
-from typing import Optional
 from math import ceil
+from typing import Optional
 
-from numpy import ndarray, array, zeros
-from cvxpy import Variable, Problem, Minimize
+from numpy import array
+from numpy import ndarray
+from numpy import zeros
+
+from cvxpy import Minimize
+from cvxpy import Problem
+from cvxpy import Variable
 
 
 class InfeasibleProblem(Exception):
     """Exception raised for infeasible LP problems in the input salary."""
 
-    def __init__(self, iter):
+    def __init__(self, iter: int) -> None:
         self.message = (
             f"LP problem in iteration period {iter} couldn't"
             " be solved. You may try increasing the horizon periods"
@@ -87,9 +92,9 @@ class OptimizePlan:
         plan_periods: int,
         horizon_periods: int,
         revise_periods: int,
-        econ: dict,
-        constraints_dict: dict = {"export_constraints": True},
-    ):
+        econ: dict[str, list[ndarray]],
+        constraints_dict: dict[str, bool] = {"export_constraints": True},
+    ) -> None:
         """
         Parameters
         ----------
@@ -112,17 +117,10 @@ class OptimizePlan:
 
         self._assert_plan()  # Assert the time periods are compatible
 
-        self.worked_hours = []
-        self.planned_activity = []
-        self.prod_planned = []
-        self.export_deficit = []
-        self.prod_excess = []
-
         self.variables = self._variables
-
         self.constraints_dict = constraints_dict
 
-    def _assert_plan(self):
+    def _assert_plan(self) -> None:
         "Assert that the time periods are compatible."
         assert (
             self.revise_periods <= self.horizon_periods
@@ -163,8 +161,14 @@ class OptimizePlan:
         export_deficit : ndarray, optional
             The export deficit at the initial time period.
         """
+        self.worked_hours: list[ndarray] = []
+        self.planned_activity: list[ndarray] = []
+        self.prod_planned: list[ndarray] = []
+        self.export_deficit: list[ndarray] = []
+        self.prod_excess: list[ndarray] = []
+
         prod_excess = zeros(self.num_products) if prod_excess is None else prod_excess
-        export_deficit = zeros(self.num_products) if export_deficit is None else export_deficit
+        export_deficit = 0 if export_deficit is None else export_deficit
 
         for i in range(0, self.plan_periods, self.revise_periods):
             self.iter_period = i
@@ -228,7 +232,8 @@ class OptimizePlan:
         Variable
             Cost function to optimize.
         """
-        cost = 0
+        cost = Variable(1)
+        cost.value = 0
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
             worked_hours = self.econ["worked_hours"][t] @ self.variables[t]
             cost += worked_hours
