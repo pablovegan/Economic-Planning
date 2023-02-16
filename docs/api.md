@@ -2,4 +2,4 @@
 
 ## OptimizePlan Class
 
-::: plan.optimizeplan.OptimizePlan
+::: economicplanning.optimizeplan.OptimizePlan

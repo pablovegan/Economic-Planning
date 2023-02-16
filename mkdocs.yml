@@ -10,8 +10,8 @@ theme:
   name: "material"
   palette:
     - media: "(prefers-color-scheme: light)"
-      primary: "blue"
-      accent: "grey"
+      primary: "red"
+      accent: "indigo"
       scheme: default
       toggle:
         icon: material/toggle-switch-off-outline

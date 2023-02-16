@@ -18,9 +18,6 @@ class InfeasibleProblem(Exception):
 
     Args:
         iter (int): Current iteration of the linear programming algorithm.
-
-    Attributes:
-        message (str): Message to show when the exception is raised.
     """
 
     def __init__(self, iter: int) -> None:
@@ -32,34 +29,48 @@ class InfeasibleProblem(Exception):
         super().__init__(self.message)
 
 
+class ErrorRevisePeriods(Exception):
+    """Error in the number of periods given."""
+
+    def __init__(self) -> None:
+        self.message = (
+            "Number of revise periods must be less or equal the" "number of horizon periods."
+        )
+        super().__init__(self.message)
+
+
+class ErrorPeriods(Exception):
+    """Error in the number of revise periods given."""
+
+    def __init__(self) -> None:
+        self.message = (
+            "The number of periods provided in the economy must be greater"
+            "or equal to the number of periods we need to optimize our plan."
+        )
+        super().__init__(self.message)
+
+
 class OptimizePlan:
     r"""Given the data for an economy, create the desired constraints and calculate
     the desired production for the upcoming years using linear programming and
     receding horizon control.
 
-    Adaptive Moment Estimation uses a step-dependent learning rate,
-    a first moment :math:`a` and a second moment :math:`b`, reminiscent of
-    the momentum and velocity of a particle:
+    To plan an economy, we need to solve the following linear programming problem
 
-    .. math::
-        x^{(t+1)} = x^{(t)} - \eta^{(t+1)} \frac{a^{(t+1)}}{\sqrt{b^{(t+1)}} + \epsilon },
+    $$    \text{minimize}\: \sum_{t=0}^T c_t \cdot x_t  $$
 
-    where the update rules for the two moments are given by
+    subject to different constraints:
 
-    .. math::
-        a^{(t+1)} &= \beta_1 a^{(t)} + (1-\beta_1) \nabla f(x^{(t)}),\\
-        b^{(t+1)} &= \beta_2 b^{(t)} + (1-\beta_2) (\nabla f(x^{(t)}))^{\odot 2},\\
-        \eta^{(t+1)} &= \eta \frac{\sqrt{(1-\beta_2^{t+1})}}{(1-\beta_1^{t+1})}.
+    1. The activity of the production units must be positive at each period,
+        $$x_t \geq 0 \:.$$
 
-    Above, :math:`( \nabla f(x^{(t-1)}))^{\odot 2}` denotes the element-wise square operation,
-    which means that each element in the gradient is multiplied by itself. The hyperparameters
-    :math:`\beta_1` and :math:`\beta_2` can also be step-dependent. Initially, the first and
-    second moment are zero.
+    2. More is produced than it is consumed,
+        $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t -
+        f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:,$$
 
-    The shift :math:`\epsilon` avoids division by zero.
-
-    For more details, see `arXiv:1412.6980 <https://arxiv.org/abs/1412.6980>`_.
-
+    3. Trade balance is positive after a certain number of periods,
+        $$\sum_{t=1}^T\: (U^\text{imp}_t \cdot x_t + f^\text{imp}_t) \cdot p^\text{imp}
+        \: \leq \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \:. $$
 
     Args:
         plan_periods (int): The number of periods to actually plan (discarding the horizon).
@@ -132,26 +143,20 @@ class OptimizePlan:
 
     def _assert_plan(self) -> None:
         "Assert that the time periods are compatible."
-        assert (
-            self.revise_periods <= self.horizon_periods
-        ), "Number of revise periods must be less or equal the number of horizon periods."
-
+        if self.revise_periods > self.horizon_periods:
+            raise ErrorRevisePeriods
         min_iter = ceil(self.plan_periods / self.revise_periods)
         min_periods = self.revise_periods * (min_iter - 1) + self.horizon_periods
-        assert min_periods <= len(self.econ["supply_use"]), (
-            "The number of periods provided in the economy must be greater"
-            "or equal to the number of periods we need to optimize our plan."
-        )
+        if min_periods > len(self.econ["supply_use"]):
+            raise ErrorPeriods
 
     @property
     def _variables(self) -> list[Variable]:
         """Returns the unknown level of production of each unit for each period of the
         horizon plan, which are the variables we want to solve for in our problem.
 
-        Returns
-        -------
-        list[Variable]
-            Activity of each production unit that we want to optimize.
+        Returns:
+            list[Variable]: Activity of each production unit that we want to optimize.
         """
         variables = []
         for i in range(self.plan_periods + self.horizon_periods - 1):
@@ -161,15 +166,13 @@ class OptimizePlan:
     def __call__(
         self, prod_excess: Optional[ndarray] = None, export_deficit: Optional[float] = None
     ) -> None:
-        """
-        Optimize the plan over the specified periods and horizon.
+        """Optimize the plan over the specified periods and horizon.
 
-        Parameters
-        ----------
-        prod_excess : ndarray, optional
-            The remaining production at the initial time period.
-        export_deficit : ndarray, optional
-            The export deficit at the initial time period.
+        Args:
+            prod_excess (ndarray, optional): The remaining production at the initial
+                time period. Defaults to None.
+            export_deficit (float, optional): The export deficit at the initial
+                time period. Defaults to None.
         """
         self.worked_hours: list[ndarray] = []
         self.planned_activity: list[ndarray] = []
@@ -183,7 +186,7 @@ class OptimizePlan:
         for i in range(0, self.plan_periods, self.revise_periods):
             self.iter_period = i
             # Solve the linear programming problem
-            self._optimize_period(prod_excess, export_deficit)
+            self.optimize_period(prod_excess, export_deficit)
             # Excess production and export deficit initialization for the next iteration
             prod_excess = self.prod_excess[-1]
             if self.constraints_dict["export_constraints"] is True:
@@ -197,22 +200,17 @@ class OptimizePlan:
         if self.constraints_dict["export_constraints"] is True:
             self.export_deficit = array(self.export_deficit).T
 
-    def _optimize_period(self, prod_excess: ndarray, export_deficit: float) -> None:
+    def optimize_period(self, prod_excess: ndarray, export_deficit: float) -> None:
         """Optimize one period of the plan.
 
-        Parameters
-        ----------
-        prod_excess : ndarray
-            The excess production at the end of each period.
-        export_deficit : float
-            The export deficit at the end of each period.
+        Args:
+            prod_excess (ndarray): The excess production at the end of each period.
+            export_deficit (float): The export deficit at the end of each period.
 
-        Raises
-        ------
-        InfeasibleProblem
-            Exception raised for infeasible LP problems in the input salary.
+        Raises:
+            InfeasibleProblem: Exception raised for infeasible LP problems in the input salary.
         """
-        problem = Problem(Minimize(self._cost), self._constraints(prod_excess, export_deficit))
+        problem = Problem(Minimize(self.cost), self.constraints(prod_excess, export_deficit))
         problem.solve(verbose=False)
 
         if problem.status in ["infeasible", "unbounded"]:
@@ -233,14 +231,11 @@ class OptimizePlan:
                 self.export_deficit[t] = self.export_deficit[t].value
 
     @property
-    def _cost(self) -> Variable:
-        """Create the cost function to optimize and save
-        the total worked hours in each period.
+    def cost(self) -> Variable:
+        """Create the cost function to optimize and save the total worked hours in each period.
 
-        Returns
-        -------
-        Variable
-            Cost function to optimize.
+        Returns:
+            Variable: Cost function to optimize.
         """
         cost = Variable(1)
         cost.value = 0
@@ -252,53 +247,42 @@ class OptimizePlan:
                 self.worked_hours.append(worked_hours)
         return cost
 
-    def _constraints(self, prod_excess: ndarray, export_deficit: float) -> list:
+    def constraints(self, prod_excess: ndarray, export_deficit: float) -> list:
         """Create a list of constraints for the plan and save
         the excess and planned production.
 
-        Parameters
-        ----------
-        prod_excess : ndarray
-            The excess production at the end of each period.
-        export_deficit : float
-            The export deficit at the end of each period.
+        Args:
+            prod_excess (ndarray): The excess production at the end of each period.
+            export_deficit (float): The export deficit at the end of each period.
 
-        Returns
-        -------
-        list
-            Constraints that define the optimization region.
+        Returns:
+            list: Constraints that define the optimization region.
         """
-        constraints = self._activity_constraints()
-        constraints += self._production_constraints(prod_excess)
+        constraints = self.activity_constraints()
+        constraints += self.production_constraints(prod_excess)
         if self.constraints_dict["export_constraints"] is True:
-            constraints += self._export_constraints(export_deficit)
+            constraints += self.export_constraints(export_deficit)
         return constraints
 
-    def _activity_constraints(self) -> list:
+    def activity_constraints(self) -> list:
         """Activity constraints guarantee that production activity is positive.
 
-        Returns
-        -------
-        list
-            Positive activity constraints.
+        Returns:
+            list: Positive activity constraints.
         """
         constraints = []
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
             constraints.append(self.variables[t] >= 0)
         return constraints
 
-    def _production_constraints(self, prod_excess: ndarray) -> list:
+    def production_constraints(self, prod_excess: ndarray) -> list:
         """We must produce more than the target output.
 
-        Parameters
-        ----------
-        prod_excess : ndarray
-            The excess production at the end of each period.
+        Args:
+            prod_excess (ndarray): The excess production at the end of each period.
 
-        Returns
-        -------
-        list
-            Production meets target constraints.
+        Returns:
+            list: Production meets target constraints.
         """
         constraints = []
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
@@ -319,18 +303,14 @@ class OptimizePlan:
                 self.prod_planned.append(prod_planned)
         return constraints
 
-    def _export_constraints(self, export_deficit: float) -> list:
+    def export_constraints(self, export_deficit: float) -> list:
         """We must export more than we import at the end of the horizon.
 
-        Parameters
-        ----------
-        export_deficit : float
-            The export deficit at the end of each period.
+        Args:
+            export_deficit (float): The export deficit at the end of each period.
 
-        Returns
-        -------
-        list
-            Export constraints.
+        Returns:
+            list: Export constraints.
         """
         # TODO: add a vector of imports for final use (not for production)
         constraints = []
