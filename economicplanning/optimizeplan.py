@@ -232,7 +232,8 @@ class OptimizePlan:
 
     @property
     def cost(self) -> Variable:
-        """Create the cost function to optimize and save the total worked hours in each period.
+        r"""Create the cost function to optimize and save the total worked hours in each period.
+        $$    \text{minimize}\: \sum_{t=0}^T c_t \cdot x_t  $$
 
         Returns:
             Variable: Cost function to optimize.
@@ -265,7 +266,8 @@ class OptimizePlan:
         return constraints
 
     def activity_constraints(self) -> list:
-        """Activity constraints guarantee that production activity is positive.
+        r"""Activity constraints guarantee that production activity is positive,
+        $$x_t \geq 0 \:.$$
 
         Returns:
             list: Positive activity constraints.
@@ -276,7 +278,9 @@ class OptimizePlan:
         return constraints
 
     def production_constraints(self, prod_excess: ndarray) -> list:
-        """We must produce more than the target output.
+        r"""We must produce more than the target output,
+        $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t -
+        f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:.$$
 
         Args:
             prod_excess (ndarray): The excess production at the end of each period.
@@ -304,7 +308,9 @@ class OptimizePlan:
         return constraints
 
     def export_constraints(self, export_deficit: float) -> list:
-        """We must export more than we import at the end of the horizon.
+        r"""We must export more than we import at the end of the horizon.
+        $$\sum_{t=1}^T\: (U^\text{imp}_t \cdot x_t + f^\text{imp}_t) \cdot p^\text{imp}
+        \: \leq \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \:. $$
 
         Args:
             export_deficit (float): The export deficit at the end of each period.
