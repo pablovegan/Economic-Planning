@@ -1,3 +1,3 @@
-# Plan
+# Start
 
 An economic planning package that uses linear programming.

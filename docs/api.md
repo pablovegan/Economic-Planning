@@ -1,5 +1,3 @@
-# References
-
-## OptimizePlan Class
+## OptimizePlan
 
 ::: economicplanning.optimizeplan.OptimizePlan

@@ -38,6 +38,22 @@ $$\begin{split} excess + supply - use - use\_import + import\_total \\
 siendo 
 $$import\_total = import\_industry + import\_consum$$
 
+## Explaining constraints
+where the variables in the period $t$ are:
+\begin{align}
+x_t & \quad\rightarrow\quad \text{Activity of each production unit.} \\[1mm]
+e_{t-1} & \quad\rightarrow\quad \text{Excess production from previous period}  \\[1mm]
+S_t & \quad\rightarrow\quad \text{Supply table}  \\[1mm]
+U^\text{dom}_t & \quad\rightarrow\quad \text{Use table of domestic products.}  \\[1mm]
+U^\text{imp}_t & \quad\rightarrow\quad \text{Use table of imported products.}  \\[1mm]
+f^\text{imp}_t & \quad\rightarrow\quad \text{Imported goods for final consume.}  \\[1mm]
+f^\text{exp}_t & \quad\rightarrow\quad \text{Exported final goods.}  \\[1mm]
+f^\text{imp}_t & \quad\rightarrow\quad \text{Final consumption of domestic goods.}  \\[1mm]
+\end{align}
+
+    We may simplify the above equation by setting
+    $$ U^\text{imp}_t x_t = f^\text{imp}_t $$
+
 
 ## Ideas
 
