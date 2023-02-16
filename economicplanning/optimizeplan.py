@@ -9,17 +9,19 @@ OptimizePlan
 from math import ceil
 from typing import Optional
 
-from numpy import array
-from numpy import ndarray
-from numpy import zeros
-
-from cvxpy import Minimize
-from cvxpy import Problem
-from cvxpy import Variable
+from cvxpy import Minimize, Problem, Variable
+from numpy import array, ndarray, zeros
 
 
 class InfeasibleProblem(Exception):
-    """Exception raised for infeasible LP problems in the input salary."""
+    """Exception raised for infeasible LP problems in the input salary.
+
+    Args:
+        iter (int): Current iteration of the linear programming algorithm.
+
+    Attributes:
+        message (str): Message to show when the exception is raised.
+    """
 
     def __init__(self, iter: int) -> None:
         self.message = (
@@ -31,42 +33,62 @@ class InfeasibleProblem(Exception):
 
 
 class OptimizePlan:
-    """
-    Given the data for an economy, create the desired constraints and calculate
+    r"""Given the data for an economy, create the desired constraints and calculate
     the desired production for the upcoming years using linear programming and
     receding horizon control.
 
-    Attributes
-    ----------
-    plan_periods : int
-        The number of periods to actually plan (discarding the horizon).
-        For example, we may want to plan the production for the next 4 years.
-    horizon_periods : int
-        The number of periods to plan in each iteration.
-        For example, we may want to use a horizon of 6 years.
-    revise_periods : int
-        The number of periods after which to revise a plan.
-        For example, if we planned a horizon of 6 years and we choose to revise
-        the plan after 2 years, we discard the resting 4 years and plan again.
-    econ : EconomicPlan
-        The economy, which contains supply-use tables, import prices...
-    num_products : int
-        The number of products in the economy.
-    num_units : int
-        The number of production units in the economy.
-    worked_hours : array_like
-        Total worked hours in each period.
-    planned_activity : array_like
-        The planned activity for the production units in each period.
-    prod_planned : array_like
-        The planned production for each product in each period.
-    prod_excess : array_like
-        The excess production at the end of each period.
-    export_deficit : array_like
-        The export deficit at the end of each period.
-    variables : list[Variable]
-        The variables of our LP problem, which correspond to the
-        level of activation of each production unit.
+    Adaptive Moment Estimation uses a step-dependent learning rate,
+    a first moment :math:`a` and a second moment :math:`b`, reminiscent of
+    the momentum and velocity of a particle:
+
+    .. math::
+        x^{(t+1)} = x^{(t)} - \eta^{(t+1)} \frac{a^{(t+1)}}{\sqrt{b^{(t+1)}} + \epsilon },
+
+    where the update rules for the two moments are given by
+
+    .. math::
+        a^{(t+1)} &= \beta_1 a^{(t)} + (1-\beta_1) \nabla f(x^{(t)}),\\
+        b^{(t+1)} &= \beta_2 b^{(t)} + (1-\beta_2) (\nabla f(x^{(t)}))^{\odot 2},\\
+        \eta^{(t+1)} &= \eta \frac{\sqrt{(1-\beta_2^{t+1})}}{(1-\beta_1^{t+1})}.
+
+    Above, :math:`( \nabla f(x^{(t-1)}))^{\odot 2}` denotes the element-wise square operation,
+    which means that each element in the gradient is multiplied by itself. The hyperparameters
+    :math:`\beta_1` and :math:`\beta_2` can also be step-dependent. Initially, the first and
+    second moment are zero.
+
+    The shift :math:`\epsilon` avoids division by zero.
+
+    For more details, see `arXiv:1412.6980 <https://arxiv.org/abs/1412.6980>`_.
+
+
+    Args:
+        plan_periods (int): The number of periods to actually plan (discarding the horizon).
+        horizon_periods (int): The number of periods to plan in each iteration.
+        revise_periods (int): The number of periods after which to revise a plan.
+        econ (dict[str, list[ndarray]]): The economy, which contains supply-use tables,
+                import tables...
+        constraints_dict (_type_, optional): _description_.
+            Defaults to {"export_constraints": True}.
+
+    Attributes:
+        plan_periods (int): The number of periods to actually plan (discarding the horizon).
+            For example, we may want to plan the production for the next 4 years.
+        horizon_periods (int): The number of periods to plan in each iteration.
+            For example, we may want to use a horizon of 6 years.
+        revise_periods (int): The number of periods after which to revise a plan.
+            For example, if we planned a horizon of 6 years and we choose to revise
+            the plan after 2 years, we discard the resting 4 years and plan again.
+        econ (EconomicPlan): The economy, which contains supply-use tables, import prices...
+        num_products (int): The number of products in the economy.
+        num_units (int): The number of production units in the economy.
+        worked_hours (list[ndarray]): Total worked hours in each period.
+        planned_activity (list[ndarray]): The planned activity for the production units
+            in each period.
+        prod_planned (list[ndarray]): The planned production for each product in each period.
+        prod_excess (list[ndarray]): The excess production at the end of each period.
+        export_deficit (list[ndarray]): The export deficit at the end of each period.
+        variables (list[Variable]): The variables of our LP problem, which correspond to the
+            level of activation of each production unit.
     """
 
     __slots__ = (
@@ -95,18 +117,6 @@ class OptimizePlan:
         econ: dict[str, list[ndarray]],
         constraints_dict: dict[str, bool] = {"export_constraints": True},
     ) -> None:
-        """
-        Parameters
-        ----------
-        plan_periods : int
-            The number of periods to actually plan (discarding the horizon).
-        horizon_periods : int
-            The number of periods to plan in each iteration.
-        revise_periods : int
-            The number of periods after which to revise a plan.
-        econ : dict
-            The economy, which contains supply-use tables, import tables...
-        """
         self.plan_periods = plan_periods
         self.horizon_periods = horizon_periods
         self.revise_periods = revise_periods
