@@ -1,9 +1,0 @@
-{
-    "python.linting.mypyEnabled": true,
-    "python.linting.enabled": false,
-    "python.linting.flake8Enabled": true,
-    "python.linting.pylintEnabled": false,
-    "python.formatting.provider": "black",
-    "python.formatting.blackPath": "/Users/macvp/miniconda3/bin/black",
-    "editor.formatOnSave": true
-}
