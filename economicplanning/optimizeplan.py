@@ -65,7 +65,7 @@ class OptimizePlan:
         $$x_t \geq 0 \:.$$
 
     2. More is produced than it is consumed,
-        $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t -
+        $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t +
         f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:,$$
 
     3. Trade balance is positive after a certain number of periods,
@@ -98,8 +98,10 @@ class OptimizePlan:
         prod_planned (list[ndarray]): The planned production for each product in each period.
         prod_excess (list[ndarray]): The excess production at the end of each period.
         export_deficit (list[ndarray]): The export deficit at the end of each period.
-        variables (list[Variable]): The variables of our LP problem, which correspond to the
+        activity (list[Variable]): The activity variables of our LP problem, which correspond to the
             level of activation of each production unit.
+        final_import (list[Variable]): The final imported products (variables) of our LP problem,
+            which correspond to the level of activation of each production unit.
     """
 
     __slots__ = (
@@ -114,7 +116,7 @@ class OptimizePlan:
         "prod_excess",
         "prod_planned",
         "export_deficit",
-        "variables",
+        "activity",
         "iter_period",
         "constraints_dict",
         "__dict__",
@@ -133,12 +135,13 @@ class OptimizePlan:
         self.revise_periods = revise_periods
 
         self.econ = econ
-        self.num_products = econ["supply_use"][0].shape[0]
-        self.num_units = econ["supply_use"][0].shape[1]
+        self.num_products = econ["supply"][0].shape[0]
+        self.num_units = econ["supply"][0].shape[1]
 
         self._assert_plan()  # Assert the time periods are compatible
 
-        self.variables = self._variables
+        self.activity = self._activity
+        self.final_import = self._final_import
         self.constraints_dict = constraints_dict
 
     def _assert_plan(self) -> None:
@@ -147,21 +150,34 @@ class OptimizePlan:
             raise ErrorRevisePeriods
         min_iter = ceil(self.plan_periods / self.revise_periods)
         min_periods = self.revise_periods * (min_iter - 1) + self.horizon_periods
-        if min_periods > len(self.econ["supply_use"]):
+        if min_periods > len(self.econ["supply"]):
             raise ErrorPeriods
 
     @property
-    def _variables(self) -> list[Variable]:
+    def _activity(self) -> list[Variable]:
         """Returns the unknown level of production of each unit for each period of the
-        horizon plan, which are the variables we want to solve for in our problem.
+        horizon plan, which are the activity we want to solve for in our problem.
 
         Returns:
             list[Variable]: Activity of each production unit that we want to optimize.
         """
-        variables = []
+        activity = []
         for i in range(self.plan_periods + self.horizon_periods - 1):
-            variables.append(Variable(self.num_units, name=f"x{i}"))
-        return variables
+            activity.append(Variable(self.num_units, name=f"activity_{i}"))
+        return activity
+
+    @property
+    def _final_import(self) -> list[Variable]:
+        """Returns the unknown level of production of each unit for each period of the
+        horizon plan, which are the activity we want to solve for in our problem.
+
+        Returns:
+            list[Variable]: Activity of each production unit that we want to optimize.
+        """
+        final_import = []
+        for i in range(self.plan_periods + self.horizon_periods - 1):
+            final_import.append(Variable(self.num_products, name=f"final_import_{i}"))
+        return final_import
 
     def __call__(
         self, prod_excess: Optional[ndarray] = None, export_deficit: Optional[float] = None
@@ -222,7 +238,7 @@ class OptimizePlan:
             t = self.iter_period + r
             if t > self.plan_periods - 1:
                 break
-            self.planned_activity.append(self.variables[t].value)
+            self.planned_activity.append(self.activity[t].value)
             self.worked_hours[t] = self.worked_hours[t].value
             self.prod_excess[t] = self.prod_excess[t].value
             self.prod_planned[t] = self.prod_planned[t].value
@@ -238,11 +254,14 @@ class OptimizePlan:
         Returns:
             Variable: Cost function to optimize.
         """
-        cost = Variable(1)
-        cost.value = 0
+        # cost = Variable(1)
+        # cost.value = 0
+        cost = 0
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
-            worked_hours = self.econ["worked_hours"][t] @ self.variables[t]
-            cost += worked_hours
+            worked_hours = self.econ["worked_hours"][t] @ self.activity[t]
+            import_prices = self.econ["prices_import"][t] @ self.final_import[t]
+            # TODO: revise cost function. The more we penalize imports, the more hours we work
+            cost += worked_hours + 2 * import_prices  # * Note: pennalize imports over domestic
             # Record the worked hours in each period
             if t <= self.iter_period + self.revise_periods - 1:
                 self.worked_hours.append(worked_hours)
@@ -259,27 +278,30 @@ class OptimizePlan:
         Returns:
             list: Constraints that define the optimization region.
         """
-        constraints = self.activity_constraints()
+        constraints = self.positivity_constraints()
         constraints += self.production_constraints(prod_excess)
         if self.constraints_dict["export_constraints"] is True:
             constraints += self.export_constraints(export_deficit)
         return constraints
 
-    def activity_constraints(self) -> list:
-        r"""Activity constraints guarantee that production activity is positive,
+    def positivity_constraints(self) -> list:
+        r"""Positivity constraints guarantee that production activity and final imported goods
+        are positive,
         $$x_t \geq 0 \:.$$
+        $$f^\text{imp}_t \geq 0 \:.$$
 
         Returns:
             list: Positive activity constraints.
         """
         constraints = []
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
-            constraints.append(self.variables[t] >= 0)
+            constraints.append(self.activity[t] >= 0)
+            constraints.append(self.final_import[t] >= 0)
         return constraints
 
     def production_constraints(self, prod_excess: ndarray) -> list:
         r"""We must produce more than the target output,
-        $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t -
+        $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t +
         f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:.$$
 
         Args:
@@ -290,15 +312,14 @@ class OptimizePlan:
         """
         constraints = []
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
-            supply_use = (
-                self.econ["supply"][t] - self.econ["use_national"][t]
-            )  # - self.econ["use_imported"][t]
-            prod_planned = supply_use @ self.variables[t]
+            supply_use = self.econ["supply"][t] - self.econ["use_domestic"][t]
+            prod_planned = supply_use @ self.activity[t]
             prod_excess = (
                 self.econ["depreciation"] @ prod_excess
                 + prod_planned
-                # + self.econ["imported_prod"][t]
-                - self.econ["prod_target"][t]
+                + self.final_import[t]
+                - self.econ["final_domestic"][t]
+                - self.econ["final_export"][t]
             )
             constraints.append(prod_excess >= 0)
             # We record the planned prod, excess prod and trade deficit in the revised periods
@@ -309,8 +330,8 @@ class OptimizePlan:
 
     def export_constraints(self, export_deficit: float) -> list:
         r"""We must export more than we import at the end of the horizon.
-        $$\sum_{t=1}^T\: (U^\text{imp}_t \cdot x_t + f^\text{imp}_t) \cdot p^\text{imp}
-        \: \leq \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \:. $$
+        $$ \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \: \geq
+        \: \sum_{t=1}^T\: (U^\text{imp}_t \cdot x_t + f^\text{imp}_t) \cdot p^\text{imp}\:. $$
 
         Args:
             export_deficit (float): The export deficit at the end of each period.
@@ -318,15 +339,14 @@ class OptimizePlan:
         Returns:
             list: Export constraints.
         """
-        # TODO: add a vector of imports for final use (not for production)
         constraints = []
         for t in range(self.iter_period, self.iter_period + self.horizon_periods):
-            total_import = (
-                self.econ["import_prices"][t] @ self.econ["use_imported"][t] @ self.variables[t]
+            total_export = self.econ["prices_export"][t] @ self.econ["final_export"][t]
+            total_import = self.econ["prices_import"][t] @ (
+                self.econ["use_import"][t] @ self.activity[t] + self.final_import[t]
             )
-            total_export = self.econ["export_prices"][t] @ self.econ["prod_export"][t]
             export_deficit = export_deficit + total_export - total_import
-            constraints.append(export_deficit >= -1e6)  # We limit export deficit
+            # constraints.append(export_deficit >= -1e6)  # We limit export deficit
 
             # We record the planned prod, excess prod and trade deficit in the revised periods
             if t <= self.iter_period + self.revise_periods - 1 and t <= self.plan_periods - 1:

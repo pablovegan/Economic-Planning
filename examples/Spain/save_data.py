@@ -24,40 +24,44 @@ def load_excel(
 
 
 if __name__ == "__main__":
-
     print("Starting...")
 
-    use_imported, supply_use = [], []
-    export_prices, import_prices = [], []
-    export_output, target_output = [], []
-    imported_prod = []
+    supply, use_domestic, use_import = [], [], []
+    final_export, final_domestic = [], []
+    prices_export, prices_import = [], []
     worked_hours = []
+
+    MAIN_PATH = join("examples", "Spain", "data")
 
     excel_names = ["cne_tod_16_en", "cne_tod_17_en", "cne_tod_18_en", "cne_tod_19_en"]
 
     for name in excel_names:
-        excel_path = join("example", "Spain", "data", name + ".xlsx")
+        excel_path = join(MAIN_PATH, name + ".xlsx")
 
         supply_matrix = csr_matrix(load_excel(excel_path, "Table1", 10, 3, 119, 83))
-        use_matrix = csr_matrix(load_excel(excel_path, "Table2", 10, 3, 119, 83))
-        target_output.append(load_excel(excel_path, "Table2", 10, 95, 119, 95).flatten())
+        supply.append(supply_matrix)
 
-        supply_use.append(supply_matrix - use_matrix)
+        # ! This is the complete use matrix, because use_import is not available!!
+        use_domestic_matrix = csr_matrix(load_excel(excel_path, "Table2", 10, 3, 119, 83))
+        use_domestic.append(use_domestic_matrix)
+        # ! Same note as before!!
+        use_import_matrix = csr_matrix(np.zeros(use_domestic_matrix.shape))
+        use_import.append(use_import_matrix)
 
-        use_imported.append(np.zeros(use_matrix.shape))
+        final_export_vector = load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten()
+        final_export.append(final_export_vector)
+        # ? Check this is correct in the table
+        final_domestic_vector = load_excel(excel_path, "Table2", 10, 95, 119, 95).flatten()
+        final_domestic.append(final_domestic_vector)
 
-        imported_prod.append(load_excel(excel_path, "Table1", 10, 85, 119, 85).flatten())
-
-        export_prices.append(np.ones(110))
-        import_prices.append(np.ones(110))
-
-        export_output.append(load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten())
+        prices_export.append(np.ones(supply_matrix.shape[0]))
+        prices_import.append(np.ones(supply_matrix.shape[0]))
 
         worked_hours.append(load_excel(excel_path, "Table2", 134, 3, 134, 83).flatten())
 
     # ! Depreciation matrix != Id may lead to infeasible solutions
     # depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
-    depreciation = csr_matrix(np.eye(supply_use[0].shape[0]))
+    depreciation = csr_matrix(np.eye(supply[0].shape[0]))
     """
     depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
     for i in range(27, 59):
@@ -66,32 +70,38 @@ if __name__ == "__main__":
     # Interpolate years to have more data
     for i in range(len(excel_names) - 1):
         idx = 2 * i + 1
-        supply_use.insert(idx, (supply_use[i + 1] + supply_use[i]) / 2)
-        use_imported.insert(idx, (use_imported[i + 1] + use_imported[i]) / 2)
-        imported_prod.insert(idx, (imported_prod[i + 1] + imported_prod[i]) / 2)
-        export_prices.insert(idx, (export_prices[i + 1] + export_prices[i]) / 2)
-        import_prices.insert(idx, (import_prices[i + 1] + import_prices[i]) / 2)
-        export_output.insert(idx, (export_output[i + 1] + export_output[i]) / 2)
-        target_output.insert(idx, (target_output[i + 1] + target_output[i]) / 2)
+        supply.insert(idx, (supply[i + 1] + supply[i]) / 2)
+        use_domestic.insert(idx, (use_domestic[i + 1] + use_domestic[i]) / 2)
+        use_import.insert(idx, (use_import[i + 1] + use_import[i]) / 2)
+
+        final_domestic.insert(idx, (final_domestic[i + 1] + final_domestic[i]) / 2)
+        final_export.insert(idx, (final_export[i + 1] + final_export[i]) / 2)
+
+        prices_export.insert(idx, (prices_export[i + 1] + prices_export[i]) / 2)
+        prices_import.insert(idx, (prices_import[i + 1] + prices_import[i]) / 2)
+
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
 
     economy = {}
 
-    economy["supply_use"] = supply_use
-    economy["use_imported"] = use_imported
-    economy["imported_prod"] = imported_prod
-    economy["export_prices"] = export_prices
-    economy["import_prices"] = import_prices
-    economy["export_output"] = export_output
-    economy["target_output"] = target_output
+    economy["supply"] = supply
+    economy["use_domestic"] = use_domestic
+    economy["use_import"] = use_import
+
+    economy["final_domestic"] = final_domestic
+    economy["final_export"] = final_export
+
+    economy["prices_export"] = prices_export
+    economy["prices_import"] = prices_import
+
     economy["depreciation"] = depreciation
     economy["worked_hours"] = worked_hours
 
-    with open(join("example", "Spain", "data", "spanish_economy.pkl"), "wb") as f:
+    with open(join(MAIN_PATH, "spanish_economy.pkl"), "wb") as f:
         dump(economy, f)
 
     # Now we save the names of each product/sector
-    excel_path = join("example", "Spain", "data", "cne_tod_19_en" + ".xlsx")
+    excel_path = join(MAIN_PATH, "cne_tod_19_en" + ".xlsx")
 
     product_names = read_excel(
         excel_path,
@@ -109,7 +119,7 @@ if __name__ == "__main__":
         nrows=8 - 8 + 1,
     )
 
-    with open(join("example", "Spain", "data", "spanish_product_names.pkl"), "wb") as f:
+    with open(join(MAIN_PATH, "spanish_product_names.pkl"), "wb") as f:
         dump((product_names, activity_names), f)
 
     print("Finished.")
