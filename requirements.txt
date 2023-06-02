@@ -1,4 +1,5 @@
 # Runtime requirements
+pydantic
 numpy
 scipy
 pandas
