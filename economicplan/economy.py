@@ -4,14 +4,51 @@ from os.path import join
 from pickle import dump
 
 import numpy as np
+from numpy.typing import NDArray
 from pandas import DataFrame, read_excel
-from scipy.sparse import csr_matrix
+from pydantic import BaseModel, ValidationError, root_validator
+from scipy.sparse import csr_matrix, spmatrix
 
-class Economy:
+Matrix = NDArray | spmatrix
 
-  def __init__(self):
-    pass
+
+class ShapesNotEqualError(ValueError):
+    """The shapes of the matrices difer."""
+
+    def __init__(self, matrices_name: str) -> None:
+        message = f"The shapes of the {matrices_name} matrices difer."
+        super().__init__(message)
+
+
+class Economy(BaseModel):
+    supply: list[Matrix]
+    use_domestic: list[Matrix]
+    use_import: list[Matrix]
+
+    final_domestic: list[Matrix]
+    final_export: list[Matrix]
+    prices_export: list[Matrix]
+    prices_import: list[Matrix]
+
+    depreciation: list[Matrix]
+    worked_hours: list[Matrix] 
   
+    @validator('supply')
+    def assert_shapes(cls, matrices: list, matrices_name: str):
+    """Assert that all the inputed matrices have the same shape."""
+    shapes = [matrix.shape for matrix in matrices]
+    if not all(shape == shapes[0] for shape in shapes):
+        raise ShapesNotEqualError(matrices_name)
+
+
+    def name_must_contain_space(cls, v):
+        if ' ' not in v:
+            raise ValueError('must contain a space')
+        return v.title()
+
+
+class SpanishEconomy(Economy)
+
   @classmethod
   def load_excel(
     cls, sheet_path: str, sheet_name: str, min_row: int, min_col: int, max_row: int, max_col: int
@@ -25,15 +62,89 @@ def load_excel(
     sheet_path: str, sheet_name: str, min_row: int, min_col: int, max_row: int, max_col: int
 ) -> DataFrame:
     """Load an excel sheet given the rows and columns."""
-    df = read_excel(
+    data = read_excel(
         sheet_path,
         sheet_name=sheet_name,
         usecols=range(min_col - 1, max_col),
         skiprows=range(min_row - 2),
         nrows=max_row - min_row + 1,
     )
-    df.fillna(0, inplace=True)
-    return df.to_numpy()
+    data = data.fillna(0)
+    return data.to_numpy()
+
+
+def assert_shapes(matrices: list, matrices_name: str):
+    """Assert that all the inputed matrices have the same shape."""
+    shapes = [matrix.shape for matrix in matrices]
+    if not all(shape == shapes[0] for shape in shapes):
+        raise ShapesNotEqualError(matrices_name)
+
+
+
+
+
+@dataclass
+class Economy:
+    supply: list[spmatrix]
+    use_domestic: list[spmatrix]
+    use_import: list[spmatrix]
+    final_domestic: list[NDArray]
+    final_export: list[NDArray]
+    prices_import: list[NDArray]
+    prices_export: list[NDArray]
+    worked_hours: list[NDArray]
+
+    def __postinit__(self) -> None:
+        attributes = ["supply", "use_domestic", "use_import", "final_domestic", "final_export", "prices_import", "prices_export", "worked_hours"]
+        for attr in attributes:
+            assert_shapes(getattr(self, attr), attr)
+        
+
+
+class Economy2:
+
+    def __init__(self, supply: list[spmatrix]):
+        self.supply = supply
+
+    @property
+    def supply(self):
+        return self._supply
+
+    @supply.setter
+    @assert_shapes
+    def supply(self, supply: list[spmatrix]):
+        self._supply = supply
+
+    @property
+    def use_domestic(self):
+        return self._use_domestic
+
+    @use_domestic.setter
+    @assert_shapes
+    def supply(self, use_domestic: list[spmatrix]):
+        self._use_domestic = use_domestic
+
+
+    @property
+    def NAME(self):
+        return self._NAME
+
+    @NAME.setter
+    @assert_shapes
+    def supply(self, NAME: list[spmatrix]):
+        self._NAME = NAME
+
+
+    def _assert_matrix_shapes():
+        ...
+
+
+
+  @classmethod
+  def load_excel(
+    cls, sheet_path: str, sheet_name: str, min_row: int, min_col: int, max_row: int, max_col: int
+  ) -> Economy:
+    """Save the supply-use tables and other data needed for planning."""
 
 
     print("Starting...")
@@ -60,14 +171,16 @@ def load_excel(
         use_import_matrix = csr_matrix(np.zeros(use_domestic_matrix.shape))
         use_import.append(use_import_matrix)
 
-        final_export_vector = load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten()
-        final_export.append(final_export_vector)
         # ? Check this is correct in the table
         final_domestic_vector = load_excel(excel_path, "Table2", 10, 95, 119, 95).flatten()
         final_domestic.append(final_domestic_vector)
 
-        prices_export.append(np.ones(supply_matrix.shape[0]))
+        final_export_vector = load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten()
+        final_export.append(final_export_vector)
+
+
         prices_import.append(np.ones(supply_matrix.shape[0]))
+        prices_export.append(np.ones(supply_matrix.shape[0]))
 
         worked_hours.append(load_excel(excel_path, "Table2", 134, 3, 134, 83).flatten())
 

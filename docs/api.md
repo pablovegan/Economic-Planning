@@ -1,3 +1,0 @@
-## OptimizePlan
-
-::: economicplanning.optimizeplan.OptimizePlan

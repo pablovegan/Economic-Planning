@@ -23,12 +23,12 @@ class InfeasibleProblem(Exception):
     """
 
     def __init__(self, iter: int) -> None:
-        self.message = (
+        message = (
             f"LP problem in iteration period {iter} couldn't"
             " be solved. You may try increasing the horizon periods"
             " or the initial surplus production."
         )
-        super().__init__(self.message)
+        super().__init__(message)
 
 
 class ErrorRevisePeriods(Exception):

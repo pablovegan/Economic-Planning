@@ -1,5 +1,0 @@
-# Runtime requirements
-numpy
-scipy
-pandas
-cvxpy

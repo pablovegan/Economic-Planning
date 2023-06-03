@@ -28,10 +28,8 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 
-dynamic = ["version", "dependencies"]
-
 [project]
-name = "python-tips-tools-benasque"
+name = "economicplan"
 authors = [
     {name = "Pablo V. Parellada"},
 ]
@@ -49,18 +47,45 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-repository = "https://github.com/pablovegan/Economic-Planning"
 
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
+
+dependencies = [
+    "pydantic",
+    "numpy",
+    "scipy",
+    "pandas",
+    "cvxpy"
+    ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "black",
+    "mkdocs",
+    "mkdocstrings",
+    "mkdocstrings[python]",
+    "mkdocs-material",
+    "Pygments",
+    "python-markdown-math",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-section-index",
+    "mkdocs-same-dir",
+    "mkdocs-autorefs",
+    ]
+
+[project.urls]
+repository = "https://github.com/pablovegan/Economic-Planning"
+documentation = "https://pablovegan.github.io/Economic-Planning"
 
 [tool.setuptools]
 platforms = ["unix", "linux", "osx", "cygwin", "win32"]
-packages = ["mypackage"]  # optional
+packages = ["economicplan"]  # optional
 
 [tool.setuptools.dynamic]
-version = {attr = "mypackage._version.__version__"}
-dependencies = {file = ["requirements.txt"]}
-
+version = {attr = "economicplan._version.__version__"}
 
 
 ######## Tools
