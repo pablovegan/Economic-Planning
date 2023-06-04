@@ -7,6 +7,8 @@ import numpy as np
 from pandas import DataFrame, read_excel
 from scipy.sparse import csr_matrix
 
+from economicplan import Economy
+
 
 def load_excel(
     sheet_path: str, sheet_name: str, min_row: int, min_col: int, max_row: int, max_col: int
@@ -19,7 +21,7 @@ def load_excel(
         skiprows=range(min_row - 2),
         nrows=max_row - min_row + 1,
     )
-    df.fillna(0, inplace=True)
+    df = df.fillna(0)
     return df.to_numpy()
 
 
@@ -61,7 +63,7 @@ if __name__ == "__main__":
 
     # ! Depreciation matrix != Id may lead to infeasible solutions
     # depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
-    depreciation = csr_matrix(np.eye(supply[0].shape[0]))
+    depreciation = [csr_matrix(np.eye(supply[0].shape[0]))]
     """
     depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
     for i in range(27, 59):
@@ -82,6 +84,19 @@ if __name__ == "__main__":
 
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
 
+    econ = Economy(
+        supply=supply,
+        use_domestic=use_domestic,
+        use_import=use_import,
+        depreciation=depreciation,
+        final_domestic=final_domestic,
+        final_export=final_export,
+        prices_import=prices_import,
+        prices_export=prices_export,
+        worked_hours=worked_hours,
+    )
+
+    """
     economy = {}
 
     economy["supply"] = supply
@@ -99,7 +114,7 @@ if __name__ == "__main__":
 
     with open(join(MAIN_PATH, "spanish_economy.pkl"), "wb") as f:
         dump(economy, f)
-
+    """
     # Now we save the names of each product/sector
     excel_path = join(MAIN_PATH, "cne_tod_19_en" + ".xlsx")
 

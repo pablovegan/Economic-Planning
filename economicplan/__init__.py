@@ -1,3 +1,3 @@
 from .optimizeplan import OptimizePlan
-
-__all__ = ["OptimizePlan"]
+from .economy import Economy
+from ._version import __version__
