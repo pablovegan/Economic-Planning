@@ -1,7 +1,7 @@
 """Save the supply-use tables and other data needed for planning."""
 
 from os.path import join
-from pickle import dump
+import pickle
 
 import numpy as np
 from pandas import DataFrame, read_excel
@@ -14,15 +14,15 @@ def load_excel(
     sheet_path: str, sheet_name: str, min_row: int, min_col: int, max_row: int, max_col: int
 ) -> DataFrame:
     """Load an excel sheet given the rows and columns."""
-    df = read_excel(
+    data = read_excel(
         sheet_path,
         sheet_name=sheet_name,
         usecols=range(min_col - 1, max_col),
         skiprows=range(min_row - 2),
         nrows=max_row - min_row + 1,
     )
-    df = df.fillna(0)
-    return df.to_numpy()
+    data = data.fillna(0)
+    return data.to_numpy()
 
 
 if __name__ == "__main__":
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # ! Depreciation matrix != Id may lead to infeasible solutions
     # depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
-    depreciation = [csr_matrix(np.eye(supply[0].shape[0]))]
+    depreciation = [csr_matrix(np.eye(supply[0].shape[0]))] * len(supply)
     """
     depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
     for i in range(27, 59):
@@ -84,7 +84,27 @@ if __name__ == "__main__":
 
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
 
-    econ = Economy(
+    # Now we save the names of each product/sector
+    excel_path = join(MAIN_PATH, "cne_tod_19_en" + ".xlsx")
+    product_names = read_excel(
+        excel_path,
+        sheet_name="Table2",
+        usecols=range(2 - 1, 2),
+        skiprows=range(10 - 2),
+        nrows=119 - 10 + 1,
+    )
+    product_names = product_names.to_numpy()[:, 0].tolist()
+    sector_names = read_excel(
+        excel_path,
+        sheet_name="Table2",
+        usecols=range(3 - 1, 83),
+        skiprows=range(8 - 2),
+        nrows=8 - 8 + 1,
+    )
+    sector_names = sector_names.to_numpy()[0, :].tolist()
+
+    # Save the economy as a dictionary
+    economy = Economy(
         supply=supply,
         use_domestic=use_domestic,
         use_import=use_import,
@@ -96,45 +116,7 @@ if __name__ == "__main__":
         worked_hours=worked_hours,
     )
 
-    """
-    economy = {}
-
-    economy["supply"] = supply
-    economy["use_domestic"] = use_domestic
-    economy["use_import"] = use_import
-
-    economy["final_domestic"] = final_domestic
-    economy["final_export"] = final_export
-
-    economy["prices_export"] = prices_export
-    economy["prices_import"] = prices_import
-
-    economy["depreciation"] = depreciation
-    economy["worked_hours"] = worked_hours
-
     with open(join(MAIN_PATH, "spanish_economy.pkl"), "wb") as f:
-        dump(economy, f)
-    """
-    # Now we save the names of each product/sector
-    excel_path = join(MAIN_PATH, "cne_tod_19_en" + ".xlsx")
-
-    product_names = read_excel(
-        excel_path,
-        sheet_name="Table2",
-        usecols=range(2 - 1, 2),
-        skiprows=range(10 - 2),
-        nrows=119 - 10 + 1,
-    )
-
-    activity_names = read_excel(
-        excel_path,
-        sheet_name="Table2",
-        usecols=range(3 - 1, 83),
-        skiprows=range(8 - 2),
-        nrows=8 - 8 + 1,
-    )
-
-    with open(join(MAIN_PATH, "spanish_product_names.pkl"), "wb") as f:
-        dump((product_names, activity_names), f)
+        pickle.dump(economy.model_dump(), f)
 
     print("Finished.")
