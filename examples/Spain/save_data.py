@@ -114,6 +114,8 @@ if __name__ == "__main__":
         prices_import=prices_import,
         prices_export=prices_export,
         worked_hours=worked_hours,
+        product_names=product_names,
+        sector_names=sector_names,
     )
 
     with open(join(MAIN_PATH, "spanish_economy.pkl"), "wb") as f:
