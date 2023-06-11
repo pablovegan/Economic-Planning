@@ -61,14 +61,6 @@ if __name__ == "__main__":
 
         worked_hours.append(load_excel(excel_path, "Table2", 134, 3, 134, 83).flatten())
 
-    # ! Depreciation matrix != Id may lead to infeasible solutions
-    # depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
-    depreciation = [csr_matrix(np.eye(supply[0].shape[0]))] * len(supply)
-    """
-    depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
-    for i in range(27, 59):
-        depreciation[i, i] = 0.3  # Human services cannot be stored for the next period
-    """
     # Interpolate years to have more data
     for i in range(len(excel_names) - 1):
         idx = 2 * i + 1
@@ -83,6 +75,15 @@ if __name__ == "__main__":
         prices_import.insert(idx, (prices_import[i + 1] + prices_import[i]) / 2)
 
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
+
+    # ! Depreciation matrix != Id may lead to infeasible solutions
+    # depreciation = 0.95 * csr_matrix(np.eye(supply_use[0].shape[0]))
+    depreciation = [csr_matrix(np.eye(supply[0].shape[0]))] * len(supply)
+    """
+    depreciation[59, 59] = 1  # Suppose CO2 is not reabsorbed
+    for i in range(27, 59):
+        depreciation[i, i] = 0.3  # Human services cannot be stored for the next period
+    """
 
     # Now we save the names of each product/sector
     excel_path = join(MAIN_PATH, "cne_tod_19_en" + ".xlsx")

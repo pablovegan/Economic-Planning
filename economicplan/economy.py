@@ -59,6 +59,8 @@ class Economy(BaseModel):
         print(f"{info.field_name} has shape {shapes[0]}")
         return matrices
 
+    # ! VALIDATE THAT ALL LISTS ARE THE SAME LENGTH root_validator
+
     def model_post_init(self, __context: Any) -> None:
         """Run after initial validation. Validates that the shapes of the
         matrices are compatible with each other (same number of products
@@ -100,3 +102,16 @@ class Economy(BaseModel):
     def sectors(self) -> int:
         """Number of products in the economy."""
         return self.supply[0].shape[1]
+
+
+class PlannedEconomy(BaseModel):
+    """Dataclass that stores the whole planned economy."""
+
+    model_config = dict(arbitrary_types_allowed=True)
+
+    activity_planned: list[NDArray]
+    production_planned: list[NDArray]
+    surplus_planned: list[NDArray]
+    final_import_planned: list[NDArray]
+    export_deficit: list[NDArray]
+    worked_hours: list[NDArray]
