@@ -12,7 +12,7 @@ import logging
 from math import ceil
 
 from cvxpy import Minimize, Problem, Variable
-from numpy import array, ndarray, zeros
+import numpy as np
 from numpy.typing import NDArray
 
 from economicplan.economy import Economy, PlannedEconomy
@@ -22,12 +22,12 @@ class InfeasibleProblem(Exception):
     """Exception raised for infeasible LP problems in the input salary.
 
     Args:
-        iter (int): Current iteration of the linear programming algorithm.
+        iter_ (int): Current iteration of the linear programming algorithm.
     """
 
-    def __init__(self, iter: int) -> None:
+    def __init__(self, iter_: int) -> None:
         message = (
-            f"LP problem in iteration period {iter} couldn't"
+            f"LP problem in iteration period {iter_} couldn't"
             " be solved. You may try increasing the horizon periods"
             " or the initial surplus production."
         )
@@ -39,7 +39,7 @@ class ErrorRevisePeriods(Exception):
 
     def __init__(self) -> None:
         self.message = (
-            "Number of revise periods must be less or equal the" "number of horizon periods."
+            "Number of revise periods must be less or equal the number of horizon periods."
         )
         super().__init__(self.message)
 
@@ -81,7 +81,7 @@ class OptimizePlan:
         plan_periods (int): The number of periods to actually plan (discarding the horizon).
         horizon_periods (int): The number of periods to plan in each iteration.
         revise_periods (int): The number of periods after which to revise a plan.
-        economy (dict[str, list[ndarray]]): The economy, which contains supply-use tables,
+        economy (dict[str, list[NDArray]]): The economy, which contains supply-use tables,
                 import tables...
         constraints_dict (_type_, optional): _description_.
             Defaults to {"export_constraints": True}.
@@ -95,12 +95,12 @@ class OptimizePlan:
             For example, if we planned a horizon of 6 years and we choose to revise
             the plan after 2 years, we discard the resting 4 years and plan again.
         economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
-        worked_hours (list[ndarray]): Total worked hours in each period.
-        planned_activity (list[ndarray]): The planned activity for the production units
+        worked_hours (list[NDArray]): Total worked hours in each period.
+        planned_activity (list[NDArray]): The planned activity for the production units
             in each period.
-        planned_production (list[ndarray]): The planned production for each product in each period.
-        planned_surplus (list[ndarray]): The surplus production at the end of each period.
-        export_deficit (list[ndarray]): The export deficit at the end of each period.
+        planned_production (list[NDArray]): The planned production for each product in each period.
+        planned_surplus (list[NDArray]): The surplus production at the end of each period.
+        export_deficit (list[NDArray]): The export deficit at the end of each period.
         activity (list[Variable]): The activity variables of our LP problem, which correspond to the
             level of activation of each production unit.
         final_import (list[Variable]): The final imported products (variables) of our LP problem,
@@ -113,9 +113,17 @@ class OptimizePlan:
         horizon_periods: int,
         revise_periods: int,
     ) -> None:
-        self.plan_periods = plan_periods
-        self.horizon_periods = horizon_periods
-        self.revise_periods = revise_periods
+        self.plan_periods: int = plan_periods
+        self.horizon_periods: int = horizon_periods
+        self.revise_periods: int = revise_periods
+        self.activity_planned: list[NDArray] | None = None
+        self.production_planned: list[NDArray] | None = None
+        self.surplus_planned: list[NDArray] | None = None
+        self.final_import_planned: list[NDArray] | None = None
+        self.export_deficit: list[NDArray] | None = None
+        self.worked_hours: list[NDArray] | None = None
+        self.activity: list[Variable] | None = None
+        self.final_import: list[Variable] | None = None
 
     def _validate_plan(self, economy: Economy) -> None:
         "Validate that the time periods are compatible."
@@ -134,20 +142,19 @@ class OptimizePlan:
         """Optimize the plan over the specified periods and horizon.
 
         Args:
-            surplus (ndarray, optional): The surplus production at the initial
+            surplus (NDArray, optional): The surplus production at the initial
                 time period. Defaults to None.
             export_deficit (float, optional): The export deficit at the initial
                 time period. Defaults to None.
         """
         self._validate_plan(economy)  # Assert the time periods are compatible
 
-        self.activity_planned: list[ndarray] = []
-        self.production_planned: list[ndarray] = []
-        self.surplus_planned: list[ndarray] = []
-        self.final_import_planned: list[ndarray] = []
-        self.export_deficit: list[ndarray] = []
-        self.worked_hours: list[ndarray] = []
-
+        self.activity_planned = []
+        self.production_planned = []
+        self.surplus_planned = []
+        self.final_import_planned = []
+        self.export_deficit = []
+        self.worked_hours = []
         self.activity = [
             Variable(economy.sectors, name=f"activity_{t}")
             for t in range(self.plan_periods + self.horizon_periods - 1)
@@ -156,20 +163,21 @@ class OptimizePlan:
             Variable(economy.products, name=f"final_import_{t}")
             for t in range(self.plan_periods + self.horizon_periods - 1)
         ]
-        surplus = zeros(economy.products) if surplus is None else surplus
+        surplus = np.zeros(economy.products) if surplus is None else surplus
 
         for period in range(0, self.plan_periods, self.revise_periods):
             self.optimize_period(period, economy, surplus, export_deficit)
             surplus = self.surplus_planned[-1]
             export_deficit = self.export_deficit[-1]
 
-        # Convert the plan solutions to numpy arrays
-        self.activity_planned = array(self.activity_planned).T
-        self.production_planned = array(self.production_planned).T
-        self.surplus_planned = array(self.surplus_planned).T
-        self.final_import_planned = array(self.final_import_planned).T
-        self.export_deficit = array(self.export_deficit).T
-        self.worked_hours = array(self.worked_hours)
+        return PlannedEconomy(
+            activity_planned = np.array(self.activity_planned).T,
+            production_planned = np.array(self.production_planned).T,
+            surplus_planned = np.array(self.surplus_planned).T,
+            final_import_planned = np.array(self.final_import_planned).T,
+            export_deficit = np.array(self.export_deficit),
+            worked_hours = np.array(self.worked_hours)
+            )
 
     def optimize_period(
         self, period: int, economy: Economy, surplus: NDArray, export_deficit: float
@@ -177,7 +185,7 @@ class OptimizePlan:
         """Optimize one period of the plan.
 
         Args:
-            surplus (ndarray): The surplus production at the end of each period.
+            surplus (NDArray): The surplus production at the end of each period.
             export_deficit (float): The export deficit at the end of each period.
 
         Raises:
@@ -196,10 +204,12 @@ class OptimizePlan:
         # Get the value of the quantities we are interested in
         for extra_periods in range(min(self.revise_periods, self.plan_periods - period)):
             t = period + extra_periods
-            self.activity_planned.append(self.activity[t].value)
+            # self.activity_planned.append(self.activity[t].value)
+            self.activity_planned[t] = self.activity[t].value
             self.production_planned[t] = self.production_planned[t].value
             self.surplus_planned[t] = self.surplus_planned[t].value
-            self.final_import_planned.append(self.final_import[t].value)
+            # self.final_import_planned.append(self.final_import[t].value)
+            self.final_import_planned[t] = self.final_import[t].value
             self.export_deficit[t] = self.export_deficit[t].value
             self.worked_hours[t] = self.worked_hours[t].value
 
@@ -222,13 +232,13 @@ class OptimizePlan:
         return cost
 
     def constraints(
-        self, period: int, economy: Economy, surplus: ndarray, export_deficit: float
+        self, period: int, economy: Economy, surplus: NDArray, export_deficit: float
     ) -> list:
         """Create a list of constraints for the plan and save
         the surplus and planned production.
 
         Args:
-            surplus (ndarray): The surplus production at the end of each period.
+            surplus (NDArray): The surplus production at the end of each period.
             export_deficit (float): The export deficit at the end of each period.
 
         Returns:
@@ -256,13 +266,13 @@ class OptimizePlan:
         ]
         return activity_constraints + final_import_constraints
 
-    def production_constraints(self, period: int, economy: Economy, surplus: ndarray) -> list:
+    def production_constraints(self, period: int, economy: Economy, surplus: NDArray) -> list:
         r"""We must produce more than the target output,
         $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t +
         f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:.$$
 
         Args:
-            surplus (ndarray): The surplus production at the end of each period.
+            surplus (NDArray): The surplus production at the end of each period.
 
         Returns:
             list: Production meets target constraints.
