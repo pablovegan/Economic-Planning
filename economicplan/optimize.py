@@ -78,7 +78,7 @@ class OptimizePlan:
         \: \leq \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \:. $$
 
     Args:
-        plan_periods (int): The number of periods to actually plan (discarding the horizon).
+        periods (int): The number of periods to actually plan (discarding the horizon).
         horizon_periods (int): The number of periods to plan in each iteration.
         revise_periods (int): The number of periods after which to revise a plan.
         economy (dict[str, list[NDArray]]): The economy, which contains supply-use tables,
@@ -87,7 +87,7 @@ class OptimizePlan:
             Defaults to {"export_constraints": True}.
 
     Attributes:
-        plan_periods (int): The number of periods to actually plan (discarding the horizon).
+        periods (int): The number of periods to actually plan (discarding the horizon).
             For example, we may want to plan the production for the next 4 years.
         horizon_periods (int): The number of periods to plan in each iteration.
             For example, we may want to use a horizon of 6 years.
@@ -109,11 +109,11 @@ class OptimizePlan:
 
     def __init__(
         self,
-        plan_periods: int,
+        periods: int,
         horizon_periods: int,
         revise_periods: int,
     ) -> None:
-        self.plan_periods: int = plan_periods
+        self.periods: int = periods
         self.horizon_periods: int = horizon_periods
         self.revise_periods: int = revise_periods
         self.activity_planned: list[NDArray] | None = None
@@ -130,7 +130,7 @@ class OptimizePlan:
         if self.revise_periods > self.horizon_periods:
             logging.error("ErrorRevisePeriods exception raised.")
             raise ErrorRevisePeriods
-        min_iter = ceil(self.plan_periods / self.revise_periods)
+        min_iter = ceil(self.periods / self.revise_periods)
         min_periods = self.revise_periods * (min_iter - 1) + self.horizon_periods
         if min_periods > len(economy.supply):
             logging.error("ErrorPeriods exception raised.")
@@ -157,24 +157,24 @@ class OptimizePlan:
         self.worked_hours = []
         self.activity = [
             Variable(economy.sectors, name=f"activity_{t}")
-            for t in range(self.plan_periods + self.horizon_periods - 1)
+            for t in range(self.periods + self.horizon_periods - 1)
         ]
         self.final_import = [
             Variable(economy.products, name=f"final_import_{t}")
-            for t in range(self.plan_periods + self.horizon_periods - 1)
+            for t in range(self.periods + self.horizon_periods - 1)
         ]
         surplus = np.zeros(economy.products) if surplus is None else surplus
 
-        for period in range(0, self.plan_periods, self.revise_periods):
+        for period in range(0, self.periods, self.revise_periods):
             self.optimize_period(period, economy, surplus, export_deficit)
             surplus = self.surplus_planned[-1]
             export_deficit = self.export_deficit[-1]
 
         return PlannedEconomy(
-            activity_planned = np.array(self.activity_planned).T,
-            production_planned = np.array(self.production_planned).T,
-            surplus_planned = np.array(self.surplus_planned).T,
-            final_import_planned = np.array(self.final_import_planned).T,
+            activity = np.array(self.activity_planned).T,
+            production = np.array(self.production_planned).T,
+            surplus = np.array(self.surplus_planned).T,
+            final_import = np.array(self.final_import_planned).T,
             export_deficit = np.array(self.export_deficit),
             worked_hours = np.array(self.worked_hours)
             )
@@ -202,14 +202,12 @@ class OptimizePlan:
             raise InfeasibleProblem(period)
 
         # Get the value of the quantities we are interested in
-        for extra_periods in range(min(self.revise_periods, self.plan_periods - period)):
+        for extra_periods in range(min(self.revise_periods, self.periods - period)):
             t = period + extra_periods
-            # self.activity_planned.append(self.activity[t].value)
-            self.activity_planned[t] = self.activity[t].value
+            self.activity_planned.append(self.activity[t].value)
             self.production_planned[t] = self.production_planned[t].value
             self.surplus_planned[t] = self.surplus_planned[t].value
-            # self.final_import_planned.append(self.final_import[t].value)
-            self.final_import_planned[t] = self.final_import[t].value
+            self.final_import_planned.append(self.final_import[t].value)
             self.export_deficit[t] = self.export_deficit[t].value
             self.worked_hours[t] = self.worked_hours[t].value
 
@@ -290,7 +288,7 @@ class OptimizePlan:
             )
             constraints.append(surplus >= 0)
             # Record the planned production and the surplus production in the revised periods
-            if t <= period + self.revise_periods - 1 and t <= self.plan_periods - 1:
+            if t <= period + self.revise_periods - 1 and t <= self.periods - 1:
                 self.surplus_planned.append(surplus)
                 self.production_planned.append(production_planned)
         return constraints
@@ -319,7 +317,7 @@ class OptimizePlan:
             # constraints.append(export_deficit >= -1e6)  # Limit export deficit
 
             # Save the trade deficit in the revised periods
-            if t <= period + self.revise_periods - 1 and t <= self.plan_periods - 1:
+            if t <= period + self.revise_periods - 1 and t <= self.periods - 1:
                 self.export_deficit.append(export_deficit)
 
         constraints.append(export_deficit >= 0)

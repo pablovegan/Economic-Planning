@@ -94,7 +94,7 @@ if __name__ == "__main__":
         skiprows=range(10 - 2),
         nrows=119 - 10 + 1,
     )
-    product_names = product_names.to_numpy()[:, 0].tolist()
+    product_names = product_names.squeeze().tolist()
     sector_names = read_excel(
         excel_path,
         sheet_name="Table2",
@@ -102,9 +102,8 @@ if __name__ == "__main__":
         skiprows=range(8 - 2),
         nrows=8 - 8 + 1,
     )
-    sector_names = sector_names.to_numpy()[0, :].tolist()
+    sector_names = sector_names.squeeze().tolist()
 
-    # Save the economy as a dictionary
     economy = Economy(
         supply=supply,
         use_domestic=use_domestic,

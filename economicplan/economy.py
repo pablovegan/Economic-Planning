@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
+from dataclasses import dataclass
 
 from numpy.typing import NDArray
 from scipy.sparse import spmatrix
@@ -20,7 +22,21 @@ class ShapeError(ValueError):
 
     def __init__(self, shape: tuple[int, int], desired_shape: tuple[int, int]) -> None:
         message = f"Shape is {shape}, instead of {desired_shape}.\n\n"
+        logging.error(message)
         super().__init__(message)
+
+
+ECONOMY_FIELDS = {
+    "supply",
+    "use_domestic",
+    "use_import",
+    "depreciation",
+    "final_domestic",
+    "final_export",
+    "prices_import",
+    "prices_export",
+    "worked_hours",
+}
 
 
 class Economy(BaseModel):
@@ -40,26 +56,22 @@ class Economy(BaseModel):
     product_names: list[str] | None = None
     sector_names: list[str] | None = None
 
-    @field_validator(
-        "supply",
-        "use_domestic",
-        "use_import",
-        "depreciation",
-        "final_domestic",
-        "final_export",
-        "prices_import",
-        "prices_export",
-        "worked_hours",
-    )
+    @field_validator(*ECONOMY_FIELDS)
     def validate_equal_shapes(cls, matrices, info: FieldValidationInfo):
         """Assert that all the inputed matrices have the same shape."""
         shapes = [matrix.shape for matrix in matrices]
         if not all([shape == shapes[0] for shape in shapes]):
             raise ShapesNotEqualError
-        print(f"{info.field_name} has shape {shapes[0]}")
+        logging.info(f"{info.field_name} has shape {shapes[0]}")
         return matrices
 
-    # ! VALIDATE THAT ALL LISTS ARE THE SAME LENGTH root_validator
+    @field_validator(*ECONOMY_FIELDS)
+    def passwords_match(cls, matrices, info: FieldValidationInfo):
+        if "supply" in info.data and len(matrices) != len(info.data["supply"]):
+            raise ValueError(
+                f"\n{info.field_name} and supply don't have the same number of time periods.\n\n"
+            )
+        return matrices
 
     def model_post_init(self, __context: Any) -> None:
         """Run after initial validation. Validates that the shapes of the
@@ -81,10 +93,10 @@ class Economy(BaseModel):
         self.validate_matrix_shape(self.worked_hours[0], shape=(self.sectors,))
 
         if self.product_names is not None and len(self.product_names) != self.products:
-            raise ValueError(f"List of PRODUCT names must be of length {self.products}.\n\n")
+            raise ValueError(f"\nList of PRODUCT names must be of length {self.products}.\n\n")
 
         if self.sector_names is not None and len(self.product_names) != self.products:
-            raise ValueError(f"List of SECTOR names must be of length {self.sectors}.\n\n")
+            raise ValueError(f"\nList of SECTOR names must be of length {self.sectors}.\n\n")
 
     @staticmethod
     def validate_matrix_shape(*matrices, shape):
@@ -104,14 +116,13 @@ class Economy(BaseModel):
         return self.supply[0].shape[1]
 
 
-class PlannedEconomy(BaseModel):
+@dataclass
+class PlannedEconomy:
     """Dataclass that stores the whole planned economy."""
 
-    model_config = dict(arbitrary_types_allowed=True)
-
-    activity_planned: list[NDArray]
-    production_planned: list[NDArray]
-    surplus_planned: list[NDArray]
-    final_import_planned: list[NDArray]
-    export_deficit: list[NDArray]
-    worked_hours: list[NDArray]
+    activity: NDArray
+    production: NDArray
+    surplus: NDArray
+    final_import: NDArray
+    export_deficit: NDArray
+    worked_hours: NDArray

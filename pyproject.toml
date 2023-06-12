@@ -9,7 +9,9 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-name = "economicplanning"
+[project]
+
+name = "economicplan"
 authors = [
     {name = "Pablo V. Parellada"},
 ]
@@ -23,27 +25,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
-    "Operating System :: POSIX",
-    "Operating System :: Unix",
-    "Operating System :: MacOS",
-]
-
-[project]
-name = "economicplan"
-authors = [
-    {name = "Pablo V. Parellada"},
-]
-description = "This is an example python project."
-readme = "README.md"
-license = {file = "LICENSE"}
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: POSIX",
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
@@ -52,11 +33,11 @@ dynamic = ["version"]
 
 dependencies = [
     "pydantic==2.0b2",
+    "typing-extensions",
     "numpy",
-    "scipy",
+    "cvxpy",
     "pandas",
     "openpyxl",
-    "cvxpy",
     "matplotlib",
     "ipykernel"
     ]
