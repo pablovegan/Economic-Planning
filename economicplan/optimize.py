@@ -1,13 +1,13 @@
 """
-Create a class that optimizes a economy using linear programming.
+Optimize an Economy dataclass using linear programming.
 
-Classes
--------
-InfeasibleProblem
-ErrorRevisePeriods
-ErrorPeriods
-OptimizePlan
+Classes:
+    InfeasibleProblem
+    ErrorRevisePeriods
+    ErrorPeriods
+    OptimizePlan
 """
+
 import logging
 from math import ceil
 
@@ -148,7 +148,7 @@ class OptimizePlan:
                 time period. Defaults to None.
         """
         self._validate_plan(economy)  # Assert the time periods are compatible
-
+        # Initialize variables
         self.activity_planned = []
         self.production_planned = []
         self.surplus_planned = []
@@ -164,7 +164,7 @@ class OptimizePlan:
             for t in range(self.periods + self.horizon_periods - 1)
         ]
         surplus = np.zeros(economy.products) if surplus is None else surplus
-
+        # Optimize the plan for each period
         for period in range(0, self.periods, self.revise_periods):
             self.optimize_period(period, economy, surplus, export_deficit)
             surplus = self.surplus_planned[-1]
