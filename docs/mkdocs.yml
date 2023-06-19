@@ -19,6 +19,7 @@ theme:
     - navigation.tracking
     - toc.follow
     - navigation.top
+    - navigation.tabs
   icon:
     repo: fontawesome/brands/github
   name: "material"
