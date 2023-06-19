@@ -20,7 +20,7 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 - [] Api to communicate with the planning algorithm.
 - [] Add tests.
 - [] Improve readme.
-- [] Decide a good name for the package (PlanPy?).
+- [] Decide a good name for the package (PlanPy? —already taken apparently—, Almirant? Kubernetes already chosen...).
 
 ## Installation
 
