@@ -58,6 +58,7 @@ dev = [
     "mkdocs-section-index",
     "mkdocs-same-dir",
     "mkdocs-autorefs",
+    "mkdocs-jupyter",
     ]
 
 [project.urls]

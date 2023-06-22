@@ -62,7 +62,7 @@ plugins:
               ignore_init_summary: yes
             merge_init_into_class: yes
             show_submodules: no
-    - mkdocs-jupyter:
+  - mkdocs-jupyter:
       execute: false
       include_source: true
       ignore_h1_titles: True

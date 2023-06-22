@@ -15,12 +15,12 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 ## To do list
 
 - [x] Add Spain and Sweden examples.
-- [] Add ecological constraints.
-- [] Add examples documentation.
-- [] Api to communicate with the planning algorithm.
-- [] Add tests.
-- [] Improve readme.
-- [] Decide a good name for the package (PlanPy? —already taken apparently—, Almirant? Kubernetes already chosen...).
+- [ ] Add ecological constraints.
+- [ ] Add examples documentation.
+- [ ] Api to communicate with the planning algorithm.
+- [ ] Add tests.
+- [ ] Improve readme.
+- [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Almirant? Kubernetes already chosen...).
 
 ## Installation
 
