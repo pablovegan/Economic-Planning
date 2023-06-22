@@ -171,13 +171,13 @@ class OptimizePlan:
             export_deficit = self.export_deficit[-1]
 
         return PlannedEconomy(
-            activity = np.array(self.activity_planned).T,
-            production = np.array(self.production_planned).T,
-            surplus = np.array(self.surplus_planned).T,
-            final_import = np.array(self.final_import_planned).T,
-            export_deficit = np.array(self.export_deficit),
-            worked_hours = np.array(self.worked_hours)
-            )
+            activity=np.array(self.activity_planned).T,
+            production=np.array(self.production_planned).T,
+            surplus=np.array(self.surplus_planned).T,
+            final_import=np.array(self.final_import_planned).T,
+            export_deficit=np.array(self.export_deficit),
+            worked_hours=np.array(self.worked_hours),
+        )
 
     def optimize_period(
         self, period: int, economy: Economy, surplus: NDArray, export_deficit: float
@@ -230,7 +230,9 @@ class OptimizePlan:
                 self.worked_hours.append(worked_hours)
         return cost
 
-    def production_constraints(self, period: int, economy: Economy, surplus: NDArray) -> list[Constraint]:
+    def production_constraints(
+        self, period: int, economy: Economy, surplus: NDArray
+    ) -> list[Constraint]:
         r"""We must produce more than the target output,
         $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t +
         f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:.$$
@@ -259,7 +261,9 @@ class OptimizePlan:
                 self.production_planned.append(production_planned)
         return constraints
 
-    def export_constraints(self, period: int, economy: Economy, export_deficit: float) -> list[Constraint]:
+    def export_constraints(
+        self, period: int, economy: Economy, export_deficit: float
+    ) -> list[Constraint]:
         r"""We must export more than we import at the end of the horizon.
 
         $$ \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \: \geq
