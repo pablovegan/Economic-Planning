@@ -52,6 +52,9 @@ ECONOMY_FIELDS = {
 }
 
 
+MatrixList = list[NDArray] | list[spmatrix]
+
+
 class Economy(BaseModel):
     """Dataclass with validations that stores the whole economy's information."""
 
@@ -66,11 +69,11 @@ class Economy(BaseModel):
     prices_import: list[NDArray] | list[spmatrix]
     prices_export: list[NDArray] | list[spmatrix]
     worked_hours: list[NDArray] | list[spmatrix]
-    product_names: list[str] | None = None
-    sector_names: list[str] | None = None
+    product_names: list[str] = ...
+    sector_names: list[str] = ...
 
     @field_validator(*ECONOMY_FIELDS)
-    def validate_equal_shapes(cls, matrices, info: FieldValidationInfo):
+    def validate_equal_shapes(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         """Assert that all the inputed matrices have the same shape."""
         shapes = [matrix.shape for matrix in matrices]
         if not all([shape == shapes[0] for shape in shapes]):
@@ -79,7 +82,7 @@ class Economy(BaseModel):
         return matrices
 
     @field_validator(*ECONOMY_FIELDS)
-    def passwords_match(cls, matrices, info: FieldValidationInfo):
+    def passwords_match(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         if "supply" in info.data and len(matrices) != len(info.data["supply"]):
             raise ValueError(
                 f"\n{info.field_name} and supply don't have the same number of time periods.\n\n"
@@ -105,14 +108,14 @@ class Economy(BaseModel):
         )
         self.validate_matrix_shape(self.worked_hours[0], shape=(self.sectors,))
 
-        if self.product_names is not None and len(self.product_names) != self.products:
+        if self.product_names is not ... and len(self.product_names) != self.products:
             raise ValueError(f"\nList of PRODUCT names must be of length {self.products}.\n\n")
 
-        if self.sector_names is not None and len(self.product_names) != self.products:
+        if self.sector_names is not ... and len(self.product_names) != self.products:
             raise ValueError(f"\nList of SECTOR names must be of length {self.sectors}.\n\n")
 
     @staticmethod
-    def validate_matrix_shape(*matrices, shape):
+    def validate_matrix_shape(*matrices: MatrixList, shape: tuple[int, int]) -> None:
         """Assert that all the inputed matrices have the same shape."""
         for matrix in matrices:
             if matrix.shape != shape:

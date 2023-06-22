@@ -21,6 +21,7 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 - [ ] Add tests.
 - [ ] Improve readme.
 - [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Almirant? Kubernetes already chosen...).
+- [ ] Save constraints dual values with `dual_value` attribute.
 
 ## Installation
 
@@ -36,15 +37,12 @@ pip install python-tips-tools
 
 ## References
 
-Articles or packages that inspired the package.
+This package is inspired by Hagberg's and Zacharia's receding horizon planning [repository](https://github.com/lokehagberg/rhp) and Hagberg's [thesis](https://www.diva-portal.org/smash/get/diva2:1730354/FULLTEXT01.pdf).
 
-## Citing
+Great Python packages exist for input-output analysis, such as [Pymrio](https://github.com/IndEcol/pymrio), altough it is not focused on planning.
 
-MyPackage is the work of many contributors. 
+Spanish supply-use tables can be found in the website of the [National Statistics Institute](https://www.ine.es/dyngs/INEbase/en/operacion.htm?c=Estadistica_C&cid=1254736177059&menu=resultados&idp=1254735576581) (INE).
 
-If you are doing research using MyPackage, please cite our paper:
-
-    Pablo V. Parellada et al. MyPackage: A simple example package for 2D linear algebra. 2023. arXiv:2006.10256
 
 
 ## Contributing
@@ -68,4 +66,4 @@ https://github.com/lokehagberg/rhp
 Documentation (work in progress) can be found in https://pablovegan.github.io/Economic-Planning/api/
 
 ## Data
-The data for Spain can be found at https://www.ine.es/ searching "tablas origen destino" or "supply use tables".
+
