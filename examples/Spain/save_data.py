@@ -43,6 +43,8 @@ if __name__ == "__main__":
         supply_matrix = csr_matrix(load_excel(excel_path, "Table1", 10, 3, 119, 83))
         supply.append(supply_matrix)
 
+        total_import_vector = load_excel(excel_path, "Table1", 10, 85, 119, 85).flatten()
+
         # ! This is the complete use matrix, because use_import is not available!!
         use_domestic_matrix = csr_matrix(load_excel(excel_path, "Table2", 10, 3, 119, 83))
         use_domestic.append(use_domestic_matrix)
@@ -53,8 +55,9 @@ if __name__ == "__main__":
         final_export_vector = load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten()
         final_export.append(final_export_vector)
         # ? Check this is correct in the table
-        final_domestic_vector = load_excel(excel_path, "Table2", 10, 95, 119, 95).flatten()
-        final_domestic.append(final_domestic_vector)
+        # final uses includes exports
+        final_uses_vector = load_excel(excel_path, "Table2", 10, 95, 119, 95).flatten()
+        final_domestic.append(final_uses_vector - final_export_vector)
 
         prices_export.append(np.ones(supply_matrix.shape[0]))
         prices_import.append(np.ones(supply_matrix.shape[0]))

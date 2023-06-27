@@ -139,6 +139,6 @@ class PlannedEconomy:
     activity: NDArray
     production: NDArray
     surplus: NDArray
-    final_import: NDArray
+    total_import: NDArray
     export_deficit: NDArray
     worked_hours: NDArray
