@@ -63,8 +63,9 @@ and remove the terms from the inequality (this restriction can be relaxed).
 This may seem like imports are not considered in our algorithm... but they are. We cannot import all the goods we want, if that happened we wouldn't need to work! To import goods from other economies we need to export something in exchange.
 $$excess + supply \geq use_{domestic} + final_{domestic} + final_{export}$$
 This allows us to introduce yet another kind of restriction: a balance of trade. To do this we need some kind of unifying measure to compare 'how much' we import and export. Usually, this is done with one-dimensional quantity, prices, but we could use other measures like labour time, energy or even multidimensional units. For now, lets keep it simple and assume we want to export more than we import:
-$$price_{export} \cdot final_{export} \geq 
-price_{import} \cdot (use_{import} + final_{import})$$
+$$
+price_{export} \cdot final_{export} \geq price_{import} \cdot (use_{import} + final_{import})
+$$
 
 
 ## References
