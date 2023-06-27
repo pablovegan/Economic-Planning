@@ -40,7 +40,7 @@ pip install python-tips-tools
 ### Autarky
 
 Let's begin with a simple example: a self-sufficient economy without external commerce. In order to feed our population, we need to produce more than we consume:
-$$supply \geq final\text{\_}domestic \:.$$
+$$supply \geq final \_ domestic \:.$$
 But something is wrong. In order to produce, we also need to consume goods, so we need to substract the used goods in the production:
 $$supply \geq use\_domestic + final\_domestic \:.$$
 This is going to be our main constraint. From now on, we are simply going to add more complexity to the model in order to make it more realistic.
