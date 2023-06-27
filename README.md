@@ -35,6 +35,38 @@ pip install python-tips-tools
 
 
 
+## Understanding the algorithm
+
+### Autarky
+
+Let's begin with a simple example: a self-sufficient economy without external commerce. In order to feed our population, we need to produce more than we consume:
+$$supply \geq final\_domestic \:.$$
+But something is wrong. In order to produce, we also need to consume goods, so we need to substract the used goods in the production:
+$$supply \geq use\_domestic + final\_domestic \:.$$
+This is going to be our main constraint. From now on, we are simply going to add more complexity to the model in order to make it more realistic.
+
+Since we are producing more than we need, there will possibly be some excess production that we can reuse in the next period. But not all excess will be available: food spoils, machines wear out, etc. To model this, we add a depreciation
+$$depreciation * excess + supply \geq use\_domestic + final\_domestic$$
+
+### Introducing trade
+
+What happens if we need to import part of the goods from external economies, both for final consumption and for intermediate production? 
+$$
+supply + import \geq use\_domestic + use\_import + final\_domestic + final\_import
+$$
+(To avoid clogging the equation, we will temporarily remove the $excess$ term of the inequality).
+
+Supposing we use in each period what we import, we can equal
+$$import \approx use\_import + final\_import$$
+and remove the terms from the inequality (this restriction can be relaxed). 
+
+This may seem like imports are not considered in our algorithm... but they are. We cannot import all the goods we want, if that happened we wouldn't need to work! To import goods from other economies we need to export something in exchange.
+$$excess + supply \geq use\_domestic + final\_domestic + final\_export$$
+This allows us to introduce yet another kind of restriction: a balance of trade. To do this we need some kind of unifying measure to compare 'how much' we import and export. Usually, this is done with one-dimensional quantity, prices, but we could use other measures like labour time, energy or even multidimensional units. For now, lets keep it simple and assume we want to export more than we import:
+$$price\_export \cdot final\_export \geq 
+price\_import \cdot (use\_import + final\_import)$$
+
+
 ## References
 
 This package is inspired by Hagberg's and Zacharia's receding horizon planning [repository](https://github.com/lokehagberg/rhp) and Hagberg's [thesis](https://www.diva-portal.org/smash/get/diva2:1730354/FULLTEXT01.pdf).
