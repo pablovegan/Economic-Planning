@@ -46,6 +46,7 @@ ECONOMY_FIELDS = {
     "depreciation",
     "final_domestic",
     "final_export",
+    "final_import",
     "prices_import",
     "prices_export",
     "worked_hours",
@@ -66,6 +67,7 @@ class Economy(BaseModel):
     depreciation: list[NDArray] | list[spmatrix]
     final_domestic: list[NDArray] | list[spmatrix]
     final_export: list[NDArray] | list[spmatrix]
+    final_import: list[NDArray] | list[spmatrix]
     prices_import: list[NDArray] | list[spmatrix]
     prices_export: list[NDArray] | list[spmatrix]
     worked_hours: list[NDArray] | list[spmatrix]

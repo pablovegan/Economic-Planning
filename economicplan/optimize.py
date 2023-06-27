@@ -251,8 +251,9 @@ class OptimizePlan:
                 economy.depreciation[t] @ surplus
                 + production_planned
                 + self.total_import[t]
-                - economy.final_domestic[t]  # includes final_import
+                - economy.final_domestic[t]
                 - economy.final_export[t]
+                - economy.final_import[t]
             )
             constraints.append(surplus >= 0)
             # Record the planned production and the surplus production in the revised periods
