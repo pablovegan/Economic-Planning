@@ -72,7 +72,17 @@ This package is inspired by Hagberg's and Zacharia's receding horizon planning [
 
 Great Python packages exist for input-output analysis, such as [Pymrio](https://github.com/IndEcol/pymrio), altough it is not focused on planning.
 
+_Pymrio – A Python Based Multi-Regional Input-Output Analysis Toolbox._ Konstantin Stadler (2021).
+https://openresearchsoftware.metajnl.com/articles/10.5334/jors.251
+
+Life cycle assessment package https://github.com/brightway-lca/brightway2
+
+ODYM - Open Dynamic Material Systems Model https://github.com/IndEcol/ODYM
+
+Lifting Industrial Ecology Modeling to a New Level of Quality and Transparency: A Call for More Transparent Publications and a Collaborative Open Source Software Framework https://onlinelibrary.wiley.com/doi/full/10.1111/jiec.12316
+
 Spanish supply-use tables can be found in the website of the [National Statistics Institute](https://www.ine.es/dyngs/INEbase/en/operacion.htm?c=Estadistica_C&cid=1254736177059&menu=resultados&idp=1254735576581) (INE).
+
 
 
 
