@@ -81,6 +81,8 @@ ODYM - Open Dynamic Material Systems Model https://github.com/IndEcol/ODYM
 
 Lifting Industrial Ecology Modeling to a New Level of Quality and Transparency: A Call for More Transparent Publications and a Collaborative Open Source Software Framework https://onlinelibrary.wiley.com/doi/full/10.1111/jiec.12316
 
+J. M. Montias. [Planning with Material Balances in Soviet-Type Economies](https://sci-hub.st/https://www.jstor.org/stable/1813077)
+
 Spanish supply-use tables can be found in the website of the [National Statistics Institute](https://www.ine.es/dyngs/INEbase/en/operacion.htm?c=Estadistica_C&cid=1254736177059&menu=resultados&idp=1254735576581) (INE).
 
 
