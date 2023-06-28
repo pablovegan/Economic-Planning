@@ -5,7 +5,7 @@ repo_url: https://github.com/pablovegan/Economic-Planning
 repo_name: pablovegan/Economic-Planning
 
 docs_dir: ./
-watch: [../README.md, ../economicplan]
+watch: [../README.md, ../cybersyn]
 
 nav:
   - Introduction: index.md

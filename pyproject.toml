@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 
-name = "economicplan"
+name = "cybersyn"
 authors = [
     {name = "Pablo V. Parellada"},
 ]
@@ -67,10 +67,10 @@ documentation = "https://pablovegan.github.io/Economic-Planning"
 
 [tool.setuptools]
 platforms = ["unix", "linux", "osx", "cygwin", "win32"]
-packages = ["economicplan"]  # optional
+packages = ["cybersyn"]  # optional
 
 [tool.setuptools.dynamic]
-version = {attr = "economicplan._version.__version__"}
+version = {attr = "cybersyn._version.__version__"}
 
 
 ######## Tools

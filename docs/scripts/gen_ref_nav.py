@@ -12,7 +12,7 @@ import mkdocs_gen_files
 
 
 nav = mkdocs_gen_files.Nav()
-PATH_LIBRARY = "economicplan"  # change this with your library's name
+PATH_LIBRARY = "cybersyn"  # change this with your library's name
 
 
 if os.path.isdir(PATH_LIBRARY) is False:

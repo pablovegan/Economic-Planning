@@ -7,7 +7,7 @@ import numpy as np
 from pandas import DataFrame, Series, concat, read_excel
 from scipy.sparse import csr_matrix
 
-from economicplan import Economy
+from cybersyn import Economy
 
 
 def load_excel(

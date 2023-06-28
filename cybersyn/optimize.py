@@ -14,7 +14,7 @@ from cvxpy import Minimize, Problem, Variable, Constraint
 import numpy as np
 from numpy.typing import NDArray
 
-from economicplan.economy import Economy, PlannedEconomy
+from cybersyn.economy import Economy, PlannedEconomy
 
 
 class InfeasibleProblem(Exception):
