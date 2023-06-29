@@ -80,10 +80,6 @@ class OptimizePlan:
         periods (int): The number of periods to actually plan (discarding the horizon).
         horizon_periods (int): The number of periods to plan in each iteration.
         revise_periods (int): The number of periods after which to revise a plan.
-        economy (dict[str, list[NDArray]]): The economy, which contains supply-use tables,
-                import tables...
-        constraints_dict (_type_, optional): _description_.
-            Defaults to {"export_constraints": True}.
 
     Attributes:
         periods (int): The number of periods to actually plan (discarding the horizon).
@@ -136,11 +132,12 @@ class OptimizePlan:
             raise ErrorPeriods
 
     def __call__(
-        self, economy: Economy, surplus: NDArray = ..., export_deficit: float = 0
+        self, economy: Economy, surplus: NDArray = None, export_deficit: float = 0
     ) -> PlannedEconomy:
         """Optimize the plan over the specified periods and horizon.
 
         Args:
+            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
             surplus (NDArray, optional): The surplus production at the initial
                 time period. Defaults to None.
             export_deficit (float, optional): The export deficit at the initial
@@ -162,7 +159,7 @@ class OptimizePlan:
             Variable(economy.products, name=f"total_import_{t}", nonneg=True)
             for t in range(self.periods + self.horizon_periods - 1)
         ]
-        surplus = np.zeros(economy.products) if surplus is ... else surplus
+        surplus = np.zeros(economy.products) if surplus is None else surplus
 
         # Optimize the plan for each period
         for period in range(0, self.periods, self.revise_periods):
@@ -185,6 +182,8 @@ class OptimizePlan:
         """Optimize one period of the plan.
 
         Args:
+            period (int): current period of the optimization.
+            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
             surplus (NDArray): The surplus production at the end of each period.
             export_deficit (float): The export deficit at the end of each period.
 
@@ -215,7 +214,9 @@ class OptimizePlan:
     def cost(self, period: int, economy: Economy) -> Variable:
         r"""Create the cost function to optimize and save the total worked hours in each period.
         $$    \text{minimize}\: \sum_{t=0}^T c_t \cdot x_t  $$
-
+        Args:
+            period (int): current period of the optimization.
+            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
         Returns:
             Variable: Cost function to optimize.
         """
@@ -238,7 +239,9 @@ class OptimizePlan:
         f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:.$$
 
         Args:
-            surplus (NDArray): The surplus production at the end of each period.
+            period (int): current period of the optimization.
+            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
+            surplus (NDArray): the surplus production at the end of each period.
 
         Returns:
             list: Production meets target constraints.
@@ -275,6 +278,8 @@ class OptimizePlan:
             an ever increasing export deficit.
 
         Args:
+            period (int): current period of the optimization.
+            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
             export_deficit (float): The export deficit at the end of each period.
 
         Returns:
@@ -292,4 +297,26 @@ class OptimizePlan:
 
         # constraints.append(export_deficit <= 1e6)  # Limit export deficit
         constraints.append(export_deficit >= 0)
+        return constraints
+
+    def labor_realloc_constraint(self, period: int, economy: Economy) -> list[Constraint]:
+        r"""This constraint limits the reallocation of labor from one period to the
+        next. For example, one cannot turn all farmers into train manufacturers in one year.
+
+        Args:
+            period (int): current period of the optimization.
+            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
+
+        Returns:
+            list: Labor reallocation constraints.
+        """
+        realloc_coef = 0.1
+        realloc_low_limit = np.array([1 - realloc_coef] * economy.sectors)
+        realloc_upper_limit = np.array([1 + realloc_coef] * economy.sectors)
+        constraints = []
+        for t in range(period, period + self.revise_periods):
+            if t == 0:  # No restrictions in the first period
+                continue
+            constraints.append(self.activity[t] >= realloc_low_limit * self.activity[t - 1])
+            constraints.append(self.activity[t] <= realloc_upper_limit * self.activity[t - 1])
         return constraints
