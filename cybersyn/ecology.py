@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from numpy.typing import NDArray
 from scipy.sparse import spmatrix
@@ -56,7 +56,7 @@ ECONOMY_FIELDS = {
 MatrixList = list[NDArray] | list[spmatrix]
 
 
-class Economy(BaseModel):
+class Ecology(BaseModel):
     """Dataclass with validations that stores the whole economy's information."""
 
     model_config = dict(arbitrary_types_allowed=True)
@@ -136,22 +136,11 @@ class Economy(BaseModel):
 
 @dataclass
 class PlannedEconomy:
-    """Dataclass that stores the whole planned economy.
+    """Dataclass that stores the whole planned economy."""
 
-    Args:
-        planned_activity (list[NDArray]): list with the planned activity for all sectors
-            in each period.
-        planned_production (list[NDArray]): list with the planned production for all product
-            in each period.
-        planned_surplus (list[NDArray]): The surplus production at the end of each period.
-        total_import (list[NDArray]): list of total imports in each period.
-        export_deficit (list[float]): list export deficit at the end of each period.
-        worked_hours (list[float]): list of total worked hours in each period.
-    """
-
-    activity: list[NDArray] = field(default_factory=list)
-    production: list[NDArray] = field(default_factory=list)
-    surplus: list[NDArray] = field(default_factory=list)
-    total_import: list[NDArray] = field(default_factory=list)
-    export_deficit: list[float] = field(default_factory=list)
-    worked_hours: list[float] = field(default_factory=list)
+    activity: NDArray
+    production: NDArray
+    surplus: NDArray
+    total_import: NDArray
+    export_deficit: NDArray
+    worked_hours: NDArray
