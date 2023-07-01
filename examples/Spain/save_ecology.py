@@ -25,28 +25,22 @@ def load_excel(
 
 
 idx_2 = [7, 12, 17, 19, 21, 23, 27, 30, 33, 35, 37, 43, 48, 49]
-idx_3 = [0, 5, 10, 16, 52, 57]
+idx_3 = [9]
 
 
 def deaggregate(data: NDArray) -> NDArray:
     data = list(data)
     full_data = []
     for i, row in enumerate(data):
-        if i in idx_2:
+        if i == 21 or i == 35 or i == 43 or i == 44 or i == 48:
             for _ in range(2):
                 full_data.append(row / 2)
-        elif i in idx_3:
+        elif i == 5 or i == 26 or i == 30 or i == 52:
             for _ in range(3):
                 full_data.append(row / 3)
-        elif i == 13 or i == 20 or i == 26:
-            for _ in range(4):
-                full_data.append(row / 4)
-        elif i == 3:
+        elif i == 4:
             for _ in range(5):
                 full_data.append(row / 5)
-        elif i == 4:
-            for _ in range(8):
-                full_data.append(row / 8)
         else:
             full_data.append(row)
 
@@ -83,7 +77,7 @@ if __name__ == "__main__":
         pollutants_year.append(co2[year])
         pollutants_year.append(ch4[year])
         pollutants_year.append(n2o[year])
-        pollutants.append(np.array(pollutants_year))
+        pollutants.append(csr_matrix(pollutants_year))
 
     # Interpolate years to have more data
     for i in range(len(pollutants) - 1):

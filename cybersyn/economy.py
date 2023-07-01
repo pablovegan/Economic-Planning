@@ -75,7 +75,7 @@ class Economy(BaseModel):
     sector_names: list[str] = ...
 
     @field_validator(*ECONOMY_FIELDS)
-    def validate_equal_shapes(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
+    def equal_shapes(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         """Assert that all the inputed matrices have the same shape."""
         shapes = [matrix.shape for matrix in matrices]
         if not all([shape == shapes[0] for shape in shapes]):
@@ -84,7 +84,7 @@ class Economy(BaseModel):
         return matrices
 
     @field_validator(*ECONOMY_FIELDS)
-    def passwords_match(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
+    def equal_periods(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         if "supply" in info.data and len(matrices) != len(info.data["supply"]):
             raise ValueError(
                 f"\n{info.field_name} and supply don't have the same number of time periods.\n\n"

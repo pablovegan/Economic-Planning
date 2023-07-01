@@ -39,17 +39,10 @@ class ShapeError(ValueError):
         super().__init__(message)
 
 
-ECONOMY_FIELDS = {
-    "supply",
-    "use_domestic",
-    "use_import",
-    "depreciation",
-    "final_domestic",
-    "final_export",
-    "final_import",
-    "prices_import",
-    "prices_export",
-    "worked_hours",
+ECOLOGY_FIELDS = {
+    "pollutants",
+    "resources",
+    "energy",
 }
 
 
@@ -61,20 +54,13 @@ class Ecology(BaseModel):
 
     model_config = dict(arbitrary_types_allowed=True)
 
-    supply: list[NDArray] | list[spmatrix]
-    use_domestic: list[NDArray] | list[spmatrix]
-    use_import: list[NDArray] | list[spmatrix]
-    depreciation: list[NDArray] | list[spmatrix]
-    final_domestic: list[NDArray] | list[spmatrix]
-    final_export: list[NDArray] | list[spmatrix]
-    final_import: list[NDArray] | list[spmatrix]
-    prices_import: list[NDArray] | list[spmatrix]
-    prices_export: list[NDArray] | list[spmatrix]
-    worked_hours: list[NDArray] | list[spmatrix]
-    product_names: list[str] = ...
-    sector_names: list[str] = ...
+    pollutants: list[NDArray] | list[spmatrix]
+    natural_resources: list[NDArray] | list[spmatrix]
+    energy: list[NDArray] | list[spmatrix]
+    pollutant_names: list[str] = ...
+    resource_names: list[str] = ...
 
-    @field_validator(*ECONOMY_FIELDS)
+    @field_validator(*ECOLOGY_FIELDS)
     def validate_equal_shapes(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         """Assert that all the inputed matrices have the same shape."""
         shapes = [matrix.shape for matrix in matrices]
@@ -83,8 +69,8 @@ class Ecology(BaseModel):
         logging.info(f"{info.field_name} has shape {shapes[0]}")
         return matrices
 
-    @field_validator(*ECONOMY_FIELDS)
-    def passwords_match(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
+    @field_validator(*ECOLOGY_FIELDS)
+    def equal_periods(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         if "supply" in info.data and len(matrices) != len(info.data["supply"]):
             raise ValueError(
                 f"\n{info.field_name} and supply don't have the same number of time periods.\n\n"
