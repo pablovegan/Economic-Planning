@@ -197,7 +197,6 @@ class OptimizePlan:
         $$    \text{minimize}\: \sum_{t=0}^T c_t \cdot x_t  $$
         Args:
             period (int): current period of the optimization.
-            economy (EconomicPlan): The economy, which contains supply-use tables, import prices...
         Returns:
             Variable: Cost function to optimize.
         """

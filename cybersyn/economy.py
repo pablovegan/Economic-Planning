@@ -139,11 +139,11 @@ class PlannedEconomy:
     """Dataclass that stores the whole planned economy.
 
     Args:
-        planned_activity (list[NDArray]): list with the planned activity for all sectors
+        activity (list[NDArray]): list with the planned activity for all sectors
             in each period.
-        planned_production (list[NDArray]): list with the planned production for all product
+        production (list[NDArray]): list with the planned production for all product
             in each period.
-        planned_surplus (list[NDArray]): The surplus production at the end of each period.
+        surplus (list[NDArray]): The surplus production at the end of each period.
         total_import (list[NDArray]): list of total imports in each period.
         export_deficit (list[float]): list export deficit at the end of each period.
         worked_hours (list[float]): list of total worked hours in each period.
