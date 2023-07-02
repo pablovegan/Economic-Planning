@@ -29,7 +29,7 @@ if __name__ == "__main__":
     print("Starting...")
 
     supply, use_domestic, use_import = [], [], []
-    final_export, final_domestic = [], []
+    target_export, target_domestic = [], []
     prices_export, prices_import = [], []
     worked_hours = []
 
@@ -52,12 +52,12 @@ if __name__ == "__main__":
         prices_export.append(load_excel(excel_path, sheet_name, 4, 80, 63, 80).flatten())
         prices_import.append(load_excel(excel_path, sheet_name, 4, 80, 63, 80).flatten())
 
-        final_export_vector = load_excel(excel_path, sheet_name, 4, 78, 63, 78).flatten()
-        final_export.append(final_export_vector)
+        target_export_vector = load_excel(excel_path, sheet_name, 4, 78, 63, 78).flatten()
+        target_export.append(target_export_vector)
 
         final_total_vector = load_excel(excel_path, sheet_name, 4, 79, 63, 79).flatten()
-        final_domestic_vector = final_total_vector - final_export_vector
-        final_domestic.append(final_domestic_vector)
+        target_domestic_vector = final_total_vector - target_export_vector
+        target_domestic.append(target_domestic_vector)
 
         worked_hours.append(load_excel(excel_path, sheet_name, 69, 3, 69, 61).flatten())
 
@@ -77,8 +77,8 @@ if __name__ == "__main__":
         prices_export.insert(idx, (prices_export[i + 1] + prices_export[i]) / 2)
         prices_import.insert(idx, (prices_import[i + 1] + prices_import[i]) / 2)
 
-        final_export.insert(idx, (final_export[i + 1] + final_export[i]) / 2)
-        final_domestic.insert(idx, (final_domestic[i + 1] + final_domestic[i]) / 2)
+        target_export.insert(idx, (target_export[i + 1] + target_export[i]) / 2)
+        target_domestic.insert(idx, (target_domestic[i + 1] + target_domestic[i]) / 2)
 
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
 
@@ -107,8 +107,8 @@ if __name__ == "__main__":
         use_domestic=use_domestic,
         use_import=use_import,
         depreciation=depreciation,
-        final_domestic=final_domestic,
-        final_export=final_export,
+        target_domestic=target_domestic,
+        target_export=target_export,
         prices_import=prices_import,
         prices_export=prices_export,
         worked_hours=worked_hours,

@@ -1,12 +1,14 @@
 """Save the supply-use tables and other data needed for planning."""
 
-from os.path import join
+from pathlib import Path
 import pickle
 
 import numpy as np
 from numpy.typing import NDArray
 from pandas import DataFrame, read_excel
 from scipy.sparse import csr_matrix
+
+from cybersyn import Ecology
 
 
 def load_excel(
@@ -51,9 +53,9 @@ def deaggregate(data: NDArray) -> NDArray:
 if __name__ == "__main__":
     print("Starting...")
 
-    MAIN_PATH = join("examples", "Spain", "data")
+    MAIN_PATH = Path("examples", "Spain", "data")
 
-    excel_path = join(MAIN_PATH, "gases.xlsx")
+    excel_path = Path(MAIN_PATH, "gases.xlsx")
 
     gei = list(deaggregate(load_excel(excel_path, "tabla-0", 9, 4, 71, 7)))
     co2 = list(deaggregate(load_excel(excel_path, "tabla-0", 76, 4, 138, 7)))
@@ -84,7 +86,14 @@ if __name__ == "__main__":
         idx = 2 * i + 1
         pollutants.insert(idx, (pollutants[i + 1] + pollutants[i]) / 2)
 
-    print("shape", pollutants[0].shape)
-    print("len", len(pollutants))
+    target_pollutants = []
+    for pollutant_year in pollutants:
+        # ! INCREASED TARGET POLLUTANT
+        target_pollutants.append(1.5 * np.ravel(np.sum(pollutant_year, axis=1)))
+
+    ecology = Ecology(pollutants=pollutants, target_pollutants=target_pollutants)
+
+    with Path(MAIN_PATH, "spanish_ecology.pkl").open("wb") as f:
+        pickle.dump(ecology.model_dump(), f)
 
     print("Finished.")

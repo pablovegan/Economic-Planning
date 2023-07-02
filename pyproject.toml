@@ -3,21 +3,16 @@
 ### Setuptools
 
 [build-system]
-requires = [
-    "setuptools",
-    "setuptools-scm",
-]
+requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 
 name = "cybersyn"
-authors = [
-    {name = "Pablo V. Parellada"},
-]
+authors = [{ name = "Pablo V. Parellada" }]
 description = "Simple economic planning package using linear programming."
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -32,15 +27,15 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "pydantic==2.0b2",
+    "pydantic==2.0",
     "typing-extensions",
     "numpy",
     "cvxpy",
     "pandas",
     "openpyxl",
     "matplotlib",
-    "ipykernel"
-    ]
+    "ipykernel",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -59,7 +54,7 @@ dev = [
     "mkdocs-same-dir",
     "mkdocs-autorefs",
     "mkdocs-jupyter",
-    ]
+]
 
 [project.urls]
 repository = "https://github.com/pablovegan/Economic-Planning"
@@ -67,10 +62,10 @@ documentation = "https://pablovegan.github.io/Economic-Planning"
 
 [tool.setuptools]
 platforms = ["unix", "linux", "osx", "cygwin", "win32"]
-packages = ["cybersyn"]  # optional
+packages = ["cybersyn"]                                 # optional
 
 [tool.setuptools.dynamic]
-version = {attr = "cybersyn._version.__version__"}
+version = { attr = "cybersyn._version.__version__" }
 
 
 ######## Tools
@@ -128,10 +123,36 @@ strict_equality = true
 [tool.ruff]
 line-length = 100
 select = ["F", "E"]
-extend-select = ["W", "I002", "B", "UP", "PLE", "PLW", "NPY", "RUF", "PD", "SIM", "PT"]
+extend-select = [
+    "W",
+    "I002",
+    "B",
+    "UP",
+    "PLE",
+    "PLW",
+    "NPY",
+    "RUF",
+    "PD",
+    "SIM",
+    "PT",
+]
 unfixable = ["NPY002"]
 ignore = []
-fixable = ["E", "F", "W", "I", "B", "UP", "PLE", "PLW", "NPY", "RUF", "PD", "SIM", "PT"]
+fixable = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "B",
+    "UP",
+    "PLE",
+    "PLW",
+    "NPY",
+    "RUF",
+    "PD",
+    "SIM",
+    "PT",
+]
 extend-exclude = ["tests", "test"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 

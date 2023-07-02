@@ -14,7 +14,6 @@ Classes:
 from __future__ import annotations
 
 import logging
-from typing import Any
 from dataclasses import dataclass, field
 
 from numpy.typing import NDArray
@@ -44,9 +43,9 @@ ECONOMY_FIELDS = {
     "use_domestic",
     "use_import",
     "depreciation",
-    "final_domestic",
-    "final_export",
-    "final_import",
+    "target_domestic",
+    "target_export",
+    "target_import",
     "prices_import",
     "prices_export",
     "worked_hours",
@@ -65,14 +64,14 @@ class Economy(BaseModel):
     use_domestic: list[NDArray] | list[spmatrix]
     use_import: list[NDArray] | list[spmatrix]
     depreciation: list[NDArray] | list[spmatrix]
-    final_domestic: list[NDArray] | list[spmatrix]
-    final_export: list[NDArray] | list[spmatrix]
-    final_import: list[NDArray] | list[spmatrix]
+    target_domestic: list[NDArray] | list[spmatrix]
+    target_export: list[NDArray] | list[spmatrix]
+    target_import: list[NDArray] | list[spmatrix]
     prices_import: list[NDArray] | list[spmatrix]
     prices_export: list[NDArray] | list[spmatrix]
     worked_hours: list[NDArray] | list[spmatrix]
-    product_names: list[str] = ...
-    sector_names: list[str] = ...
+    product_names: list[str] | None = None
+    sector_names: list[str] | None = None
 
     @field_validator(*ECONOMY_FIELDS)
     def equal_shapes(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
@@ -91,7 +90,7 @@ class Economy(BaseModel):
             )
         return matrices
 
-    def model_post_init(self, __context: Any) -> None:
+    def __post_init__(self) -> None:
         """Run after initial validation. Validates that the shapes of the
         matrices are compatible with each other (same number of products
         and sectors).
@@ -102,8 +101,8 @@ class Economy(BaseModel):
         )
         self.validate_matrix_shape(self.depreciation[0], shape=(self.products, self.products))
         self.validate_matrix_shape(
-            self.final_domestic[0],
-            self.final_export[0],
+            self.target_domestic[0],
+            self.target_export[0],
             self.prices_import[0],
             self.prices_export[0],
             shape=(self.products,),

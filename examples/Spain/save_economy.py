@@ -1,6 +1,6 @@
 """Save the supply-use tables and other data needed for planning."""
 
-from os.path import join
+from pathlib import Path
 import pickle
 
 import numpy as np
@@ -29,16 +29,16 @@ if __name__ == "__main__":
     print("Starting...")
 
     supply, use_domestic, use_import = [], [], []
-    final_export, final_domestic, final_import = [], [], []
+    target_export, target_domestic, target_import = [], [], []
     prices_export, prices_import = [], []
     worked_hours = []
 
-    MAIN_PATH = join("examples", "Spain", "data")
+    MAIN_PATH = Path("examples", "Spain", "data")
 
     excel_names = ["cne_tod_16_en", "cne_tod_17_en", "cne_tod_18_en", "cne_tod_19_en"]
 
     for name in excel_names:
-        excel_path = join(MAIN_PATH, name + ".xlsx")
+        excel_path = Path(MAIN_PATH, name + ".xlsx")
 
         supply_matrix = csr_matrix(load_excel(excel_path, "Table1", 10, 3, 119, 83))
         supply.append(supply_matrix)
@@ -52,15 +52,15 @@ if __name__ == "__main__":
         use_import_matrix = csr_matrix(np.zeros(use_domestic_matrix.shape))
         use_import.append(use_import_matrix)
 
-        final_export_vector = load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten()
-        final_export.append(final_export_vector)
+        target_export_vector = load_excel(excel_path, "Table2", 10, 92, 119, 92).flatten()
+        target_export.append(target_export_vector)
 
-        final_import.append(np.zeros_like(final_export_vector))
+        target_import.append(np.zeros_like(target_export_vector))
 
         # ? Check this is correct in the table
         # final uses includes exports
         final_uses_vector = load_excel(excel_path, "Table2", 10, 95, 119, 95).flatten()
-        final_domestic.append(final_uses_vector - final_export_vector)
+        target_domestic.append(final_uses_vector - target_export_vector)
 
         prices_export.append(np.ones(supply_matrix.shape[0]))
         prices_import.append(np.ones(supply_matrix.shape[0]))
@@ -74,9 +74,9 @@ if __name__ == "__main__":
         use_domestic.insert(idx, (use_domestic[i + 1] + use_domestic[i]) / 2)
         use_import.insert(idx, (use_import[i + 1] + use_import[i]) / 2)
 
-        final_domestic.insert(idx, (final_domestic[i + 1] + final_domestic[i]) / 2)
-        final_export.insert(idx, (final_export[i + 1] + final_export[i]) / 2)
-        final_import.insert(idx, (final_import[i + 1] + final_import[i]) / 2)
+        target_domestic.insert(idx, (target_domestic[i + 1] + target_domestic[i]) / 2)
+        target_export.insert(idx, (target_export[i + 1] + target_export[i]) / 2)
+        target_import.insert(idx, (target_import[i + 1] + target_import[i]) / 2)
 
         prices_export.insert(idx, (prices_export[i + 1] + prices_export[i]) / 2)
         prices_import.insert(idx, (prices_import[i + 1] + prices_import[i]) / 2)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     """
 
     # Now we save the names of each product/sector
-    excel_path = join(MAIN_PATH, "cne_tod_19_en" + ".xlsx")
+    excel_path = Path(MAIN_PATH, "cne_tod_19_en" + ".xlsx")
     product_names = read_excel(
         excel_path,
         sheet_name="Table2",
@@ -116,17 +116,17 @@ if __name__ == "__main__":
         use_domestic=use_domestic,
         use_import=use_import,
         depreciation=depreciation,
-        final_domestic=final_domestic,
-        final_export=final_export,
+        target_domestic=target_domestic,
+        target_export=target_export,
         prices_import=prices_import,
         prices_export=prices_export,
-        final_import=final_import,
+        target_import=target_import,
         worked_hours=worked_hours,
         product_names=product_names,
         sector_names=sector_names,
     )
 
-    with open(join(MAIN_PATH, "spanish_economy.pkl"), "wb") as f:
+    with Path(MAIN_PATH, "spanish_economy.pkl").open("wb") as f:
         pickle.dump(economy.model_dump(), f)
 
     print("Finished.")

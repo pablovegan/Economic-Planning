@@ -5,6 +5,13 @@ Classes:
     ErrorRevisePeriods
     ErrorPeriods
     OptimizePlan
+
+# TODO:
+    Input targets as an object in optimizer?
+        - Target domestic
+        - Target export
+    Add more ecological constraints
+
 """
 
 import logging
@@ -116,6 +123,7 @@ class OptimizePlan:
         self.horizon_periods: int = horizon_periods
         self.revise_periods: int = revise_periods
         self.economy = economy
+        self.ecology = ecology
         self._validate_plan(economy)
 
         self.planned = PlannedEconomy()
@@ -170,7 +178,8 @@ class OptimizePlan:
         constraints = self.production_constraints(period, surplus)
         constraints += self.export_constraints(period, export_deficit)
         constraints += self.labor_realloc_constraint(period)
-
+        if self.ecology is not None:
+            constraints += self.pollutants_constraint(period)
         objective = Minimize(self.cost(period))
         problem = Problem(objective, constraints)
         problem.solve(verbose=False)
@@ -233,9 +242,9 @@ class OptimizePlan:
                 self.economy.depreciation[t] @ surplus
                 + production
                 + self.total_import[t]
-                - self.economy.final_domestic[t]
-                - self.economy.final_export[t]
-                - self.economy.final_import[t]
+                - self.economy.target_domestic[t]
+                - self.economy.target_export[t]
+                - self.economy.target_import[t]
             )
             constraints.append(surplus >= 0)
             # Record the planned production and the surplus production in the revised periods
@@ -263,9 +272,9 @@ class OptimizePlan:
         """
         constraints = []
         for t in range(period, period + self.revise_periods):
-            total_price_export = self.economy.prices_export[t] @ self.economy.final_export[t]
+            total_price_export = self.economy.prices_export[t] @ self.economy.target_export[t]
             total_price_import = self.economy.prices_import[t] @ self.total_import[t]
-            # economy.use_import[t] @ self.activity[t] + self.final_import[t]
+            # economy.use_import[t] @ self.activity[t] + self.target_import[t]
             export_deficit = export_deficit + total_price_export - total_price_import
             # Save the trade deficit in the revised periods
             if t <= period + self.revise_periods - 1 and t <= self.periods - 1:
@@ -297,5 +306,14 @@ class OptimizePlan:
             )
             constraints.append(
                 self.activity[t] <= multiply(realloc_upper_limit, self.activity[t - 1])
+            )
+        return constraints
+
+    def pollutants_constraint(self, period: int) -> list[Constraint]:
+        r"""Maximum pollution allowed."""
+        constraints = []
+        for t in range(period, period + self.revise_periods):
+            constraints.append(
+                self.ecology.pollutants[t] @ self.activity[t] <= self.ecology.target_pollutants[t]
             )
         return constraints
