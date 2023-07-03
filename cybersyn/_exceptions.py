@@ -1,3 +1,10 @@
+"""Basic exception classes used to validate correct inputs in the economy.
+
+Classes:
+    ShapesNotEqualError
+    ShapeError
+"""
+
 import logging
 
 

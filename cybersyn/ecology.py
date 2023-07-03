@@ -1,14 +1,11 @@
-"""
-Dataclasses to save the economy and the planned economy returned by the optimizer.
-The Economy class is implemented using Pydantic to perform certain checks in
-the data, which will normally come from a database, making it prone to mistakes
-when loading the data.
+"""Dataclasses to save the ecology and the planned ecology.
 
 Classes:
-    ShapesNotEqualError
-    ShapeError
-    Economy
-    PlannedEconomy
+    Ecology
+    PlannedEcology
+
+# TODO:
+    Add PlannedEcology class or merge it with planned economy.
 """
 
 from __future__ import annotations

@@ -1,13 +1,11 @@
-"""
-Dataclasses to save the economy and the planned economy returned by the optimizer.
+"""Dataclasses to save the economy and the planned economy returned by the optimizer.
 The Economy class is implemented using Pydantic to perform certain checks in
 the data, which will normally come from a database, making it prone to mistakes
 when loading the data.
 
 Classes:
-    ShapesNotEqualError
-    ShapeError
     Economy
+    TargetEconomy
     PlannedEconomy
 """
 
