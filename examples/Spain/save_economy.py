@@ -7,7 +7,7 @@ import numpy as np
 from pandas import DataFrame, read_excel
 from scipy.sparse import csr_matrix
 
-from cybersyn import Economy
+from cybersyn import Economy, TargetEconomy
 
 
 def load_excel(
@@ -116,17 +116,23 @@ if __name__ == "__main__":
         use_domestic=use_domestic,
         use_import=use_import,
         depreciation=depreciation,
-        target_domestic=target_domestic,
-        target_export=target_export,
         prices_import=prices_import,
         prices_export=prices_export,
-        target_import=target_import,
         worked_hours=worked_hours,
         product_names=product_names,
         sector_names=sector_names,
     )
 
-    with Path(MAIN_PATH, "spanish_economy.pkl").open("wb") as f:
+    target_economy = TargetEconomy(
+        domestic=target_domestic,
+        imports=target_import,
+        exports=target_export,
+    )
+
+    with Path(MAIN_PATH, "economy.pkl").open("wb") as f:
         pickle.dump(economy.model_dump(), f)
+
+    with Path(MAIN_PATH, "target_economy.pkl").open("wb") as f:
+        pickle.dump(target_economy.model_dump(), f)
 
     print("Finished.")

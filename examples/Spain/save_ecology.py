@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, read_excel
 from scipy.sparse import csr_matrix
 
-from cybersyn import Ecology
+from cybersyn import Ecology, TargetEcology
 
 
 def load_excel(
@@ -21,6 +21,7 @@ def load_excel(
         usecols=range(min_col - 1, max_col),
         skiprows=range(min_row - 2),
         nrows=max_row - min_row + 1,
+        engine="openpyxl",
     )
     data = data.fillna(0)
     return data.to_numpy()
@@ -71,7 +72,7 @@ if __name__ == "__main__":
     # pro3 = deaggregate(load_excel(excel_path, "tabla-0", 746, 4, 808, 7))
     # covnm = deaggregate(load_excel(excel_path, "tabla-0", 813, 4, 875, 7))
 
-    pollutants = []
+    pollutants_sector = []
 
     for year in range(3, -1, -1):
         pollutants_year = []
@@ -79,21 +80,26 @@ if __name__ == "__main__":
         pollutants_year.append(co2[year])
         pollutants_year.append(ch4[year])
         pollutants_year.append(n2o[year])
-        pollutants.append(csr_matrix(pollutants_year))
+        pollutants_sector.append(csr_matrix(pollutants_year))
 
     # Interpolate years to have more data
-    for i in range(len(pollutants) - 1):
+    for i in range(len(pollutants_sector) - 1):
         idx = 2 * i + 1
-        pollutants.insert(idx, (pollutants[i + 1] + pollutants[i]) / 2)
+        pollutants_sector.insert(idx, (pollutants_sector[i + 1] + pollutants_sector[i]) / 2)
 
     target_pollutants = []
-    for pollutant_year in pollutants:
+    for pollutant_year in pollutants_sector:
         # ! INCREASED TARGET POLLUTANT
         target_pollutants.append(1.5 * np.ravel(np.sum(pollutant_year, axis=1)))
 
-    ecology = Ecology(pollutants=pollutants, target_pollutants=target_pollutants)
+    ecology = Ecology(pollutants_sector=pollutants_sector)
 
-    with Path(MAIN_PATH, "spanish_ecology.pkl").open("wb") as f:
+    target_ecology = TargetEcology(pollutants=target_pollutants)
+
+    with Path(MAIN_PATH, "ecology.pkl").open("wb") as f:
         pickle.dump(ecology.model_dump(), f)
+
+    with Path(MAIN_PATH, "target_ecology.pkl").open("wb") as f:
+        pickle.dump(target_ecology.model_dump(), f)
 
     print("Finished.")

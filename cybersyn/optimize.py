@@ -21,8 +21,8 @@ from cvxpy import Minimize, Problem, Variable, Constraint, multiply
 import numpy as np
 from numpy.typing import NDArray
 
-from .economy import Economy, PlannedEconomy
-from .ecology import Ecology
+from .economy import Economy, PlannedEconomy, TargetEconomy
+from .ecology import Ecology, TargetEcology
 
 
 class InfeasibleProblem(Exception):
@@ -139,7 +139,13 @@ class OptimizePlan:
             logging.error("ErrorPeriods exception raised.")
             raise ErrorPeriods
 
-    def __call__(self, surplus: NDArray = None, export_deficit: float = 0) -> PlannedEconomy:
+    def __call__(
+        self,
+        target_economy: TargetEconomy,
+        target_ecology: TargetEcology,
+        surplus: NDArray = None,
+        export_deficit: float = 0,
+    ) -> PlannedEconomy:
         """Optimize the plan over the specified periods and horizon.
 
         Args:
@@ -159,12 +165,25 @@ class OptimizePlan:
         ]
         surplus = np.zeros(self.economy.products) if surplus is None else surplus
 
-        self.optimize_period(0, surplus, export_deficit)
+        self.optimize_period(0, target_economy, target_ecology, surplus, export_deficit)
         for period in range(1, self.periods, self.revise_periods):
-            self.optimize_period(period, self.planned.surplus[-1], self.planned.export_deficit[-1])
+            self.optimize_period(
+                period,
+                target_economy,
+                target_ecology,
+                self.planned.surplus[-1],
+                self.planned.export_deficit[-1],
+            )
         return self.planned
 
-    def optimize_period(self, period: int, surplus: NDArray, export_deficit: float) -> None:
+    def optimize_period(
+        self,
+        period: int,
+        target_economy: TargetEconomy,
+        target_ecology: TargetEcology,
+        surplus: NDArray,
+        export_deficit: float,
+    ) -> None:
         """Optimize one period of the plan.
 
         Args:
@@ -175,11 +194,11 @@ class OptimizePlan:
         Raises:
             InfeasibleProblem: Exception raised for infeasible LP problems in the input salary.
         """
-        constraints = self.production_constraints(period, surplus)
-        constraints += self.export_constraints(period, export_deficit)
+        constraints = self.production_constraints(period, target_economy, surplus)
+        constraints += self.export_constraints(period, target_economy, export_deficit)
         constraints += self.labor_realloc_constraint(period)
         if self.ecology is not None:
-            constraints += self.pollutants_constraint(period)
+            constraints += self.pollutants_constraint(period, target_ecology)
         objective = Minimize(self.cost(period))
         problem = Problem(objective, constraints)
         problem.solve(verbose=False)
@@ -220,7 +239,9 @@ class OptimizePlan:
                 self.worked_hours.append(worked_hours)
         return cost
 
-    def production_constraints(self, period: int, surplus: NDArray) -> list[Constraint]:
+    def production_constraints(
+        self, period: int, target_economy: TargetEconomy, surplus: NDArray
+    ) -> list[Constraint]:
         r"""We must produce more than the target output,
         $$e_{t-1} + S_t \cdot x_t - U^\text{dom}_t \cdot x_t +
         f^\text{imp}_t \geq f^\text{exp}_t + f^\text{dom}_t \:.$$
@@ -242,9 +263,9 @@ class OptimizePlan:
                 self.economy.depreciation[t] @ surplus
                 + production
                 + self.total_import[t]
-                - self.economy.target_domestic[t]
-                - self.economy.target_export[t]
-                - self.economy.target_import[t]
+                - target_economy.domestic[t]
+                - target_economy.exports[t]
+                - target_economy.imports[t]
             )
             constraints.append(surplus >= 0)
             # Record the planned production and the surplus production in the revised periods
@@ -253,7 +274,9 @@ class OptimizePlan:
                 self.production.append(production)
         return constraints
 
-    def export_constraints(self, period: int, export_deficit: float) -> list[Constraint]:
+    def export_constraints(
+        self, period: int, target_economy: TargetEconomy, export_deficit: float
+    ) -> list[Constraint]:
         r"""We must export more than we import at the end of the horizon.
 
         $$ \: \sum_{t=1}^T \: f^\text{exp}_t \cdot p^\text{exp} \: \geq
@@ -272,7 +295,7 @@ class OptimizePlan:
         """
         constraints = []
         for t in range(period, period + self.revise_periods):
-            total_price_export = self.economy.prices_export[t] @ self.economy.target_export[t]
+            total_price_export = self.economy.prices_export[t] @ target_economy.exports[t]
             total_price_import = self.economy.prices_import[t] @ self.total_import[t]
             # economy.use_import[t] @ self.activity[t] + self.target_import[t]
             export_deficit = export_deficit + total_price_export - total_price_import
@@ -309,11 +332,11 @@ class OptimizePlan:
             )
         return constraints
 
-    def pollutants_constraint(self, period: int) -> list[Constraint]:
+    def pollutants_constraint(self, period: int, target_ecology: TargetEcology) -> list[Constraint]:
         r"""Maximum pollution allowed."""
         constraints = []
         for t in range(period, period + self.revise_periods):
             constraints.append(
-                self.ecology.pollutants[t] @ self.activity[t] <= self.ecology.target_pollutants[t]
+                self.ecology.pollutants_sector[t] @ self.activity[t] <= target_ecology.pollutants[t]
             )
         return constraints
