@@ -143,8 +143,8 @@ class OptimizePlan:
         self,
         target_economy: TargetEconomy,
         target_ecology: TargetEcology,
-        surplus: NDArray = None,
-        export_deficit: float = 0,
+        init_surplus: NDArray = None,
+        init_export_deficit: float = 0,
     ) -> PlannedEconomy:
         """Optimize the plan over the specified periods and horizon.
 
@@ -163,9 +163,9 @@ class OptimizePlan:
             Variable(self.economy.products, name=f"total_import_{t}", nonneg=True)
             for t in range(self.periods + self.horizon_periods - 1)
         ]
-        surplus = np.zeros(self.economy.products) if surplus is None else surplus
+        init_surplus = np.zeros(self.economy.products) if init_surplus is None else init_surplus
 
-        self.optimize_period(0, target_economy, target_ecology, surplus, export_deficit)
+        self.optimize_period(0, target_economy, target_ecology, init_surplus, init_export_deficit)
         for period in range(1, self.periods, self.revise_periods):
             self.optimize_period(
                 period,
