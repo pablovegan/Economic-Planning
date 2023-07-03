@@ -149,9 +149,9 @@ class OptimizePlan:
         """Optimize the plan over the specified periods and horizon.
 
         Args:
-            surplus (NDArray, optional): The surplus production at the initial
+            init_surplus (NDArray, optional): The surplus production at the initial
                 time period. Defaults to None.
-            export_deficit (float, optional): The export deficit at the initial
+            init_export_deficit (float, optional): The export deficit at the initial
                 time period. Defaults to None.
         """
         self.production, self.surplus, self.export_deficit, self.worked_hours = [], [], [], []
