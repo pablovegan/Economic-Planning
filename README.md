@@ -15,6 +15,7 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 ## To do list
 
 - [x] Add Spain and Sweden examples.
+- [ ] Check Gekko optimization library https://machinelearning.byu.edu/
 - [ ] Add ecological constraints.
 - [ ] Add examples documentation.
 - [ ] Api to communicate with the planning algorithm.
