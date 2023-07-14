@@ -51,9 +51,7 @@ $$depreciation * excess + supply \geq use_{domestic} + final_{domestic}$$
 ### Introducing trade
 
 What happens if we need to import part of the goods from external economies, both for final consumption and for intermediate production? 
-$$
-supply + import \geq use_{domestic} + use_{import} + final_{domestic} + final_{import}
-$$
+$$supply + import \geq use_{domestic} + use_{import} + final_{domestic} + final_{import}$$
 (To avoid clogging the equation, we will temporarily remove the $excess$ term of the inequality).
 
 Supposing we use in each period what we import, we can equal
@@ -84,6 +82,8 @@ Lifting Industrial Ecology Modeling to a New Level of Quality and Transparency: 
 J. M. Montias. [Planning with Material Balances in Soviet-Type Economies](https://sci-hub.st/https://www.jstor.org/stable/1813077)
 
 Spanish supply-use tables can be found in the website of the [National Statistics Institute](https://www.ine.es/dyngs/INEbase/en/operacion.htm?c=Estadistica_C&cid=1254736177059&menu=resultados&idp=1254735576581) (INE).
+
+Introduction to control theory. https://fab.cba.mit.edu/classes/865.21/topics/control/
 
 
 
