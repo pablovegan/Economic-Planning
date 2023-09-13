@@ -21,7 +21,7 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 - [ ] Api to communicate with the planning algorithm.
 - [ ] Add tests.
 - [ ] Improve readme.
-- [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Almirant? Kubernetes already chosen...).
+- [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Cybersyn?).
 - [ ] Save constraints dual values with `dual_value` attribute.
 
 ## Installation
