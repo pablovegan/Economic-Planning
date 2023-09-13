@@ -101,11 +101,6 @@ If you are new to contributing to open source, [this guide](https://opensource.g
 This software is under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
 
 
-
-# OptimizePlan
-Receding horizon planning as in Loke and Dave's
-https://github.com/lokehagberg/rhp
-
 ## Documentation
 Documentation (work in progress) can be found in https://pablovegan.github.io/Economic-Planning/api/
 
