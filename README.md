@@ -7,7 +7,7 @@
 [![black](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 [![Test](https://github.com/pablovegan/Python-tips-tools/actions/workflows/tests.yml/badge.svg)](https://github.com/pablovegan/Python-tips-tools/actions/workflows/tests.yml)
 
-A simple example package for 2D linear algebra.
+A simple example package for economic planning.
 
 ## Documentation and examples
 Documentation and examples can be found in https://pablovegan.github.io/QubitApproximant/.
