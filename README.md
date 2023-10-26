@@ -28,7 +28,7 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 
 With `pip`:
 ```console
-pip install python-tips-tools
+pip install 
 ```
 
 ## Quick usage
