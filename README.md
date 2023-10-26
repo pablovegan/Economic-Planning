@@ -7,7 +7,7 @@
 [![black](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 [![Test](https://github.com/pablovegan/Python-tips-tools/actions/workflows/tests.yml/badge.svg)](https://github.com/pablovegan/Python-tips-tools/actions/workflows/tests.yml)
 
-A simple example package for 2D linear algebra.
+A simple example package for economic planning.
 
 ## Documentation and examples
 Documentation and examples can be found in https://pablovegan.github.io/QubitApproximant/.
@@ -15,19 +15,20 @@ Documentation and examples can be found in https://pablovegan.github.io/QubitApp
 ## To do list
 
 - [x] Add Spain and Sweden examples.
+- [ ] Check Gekko optimization library https://machinelearning.byu.edu/
 - [ ] Add ecological constraints.
 - [ ] Add examples documentation.
 - [ ] Api to communicate with the planning algorithm.
 - [ ] Add tests.
 - [ ] Improve readme.
-- [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Almirant? Kubernetes already chosen...).
+- [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Cybersyn?).
 - [ ] Save constraints dual values with `dual_value` attribute.
 
 ## Installation
 
 With `pip`:
 ```console
-pip install python-tips-tools
+pip install 
 ```
 
 ## Quick usage
@@ -51,9 +52,7 @@ $$depreciation * excess + supply \geq use_{domestic} + final_{domestic}$$
 ### Introducing trade
 
 What happens if we need to import part of the goods from external economies, both for final consumption and for intermediate production? 
-$$
-supply + import \geq use_{domestic} + use_{import} + final_{domestic} + final_{import}
-$$
+$$supply + import \geq use_{domestic} + use_{import} + final_{domestic} + final_{import}$$
 (To avoid clogging the equation, we will temporarily remove the $excess$ term of the inequality).
 
 Supposing we use in each period what we import, we can equal
@@ -85,6 +84,8 @@ J. M. Montias. [Planning with Material Balances in Soviet-Type Economies](https:
 
 Spanish supply-use tables can be found in the website of the [National Statistics Institute](https://www.ine.es/dyngs/INEbase/en/operacion.htm?c=Estadistica_C&cid=1254736177059&menu=resultados&idp=1254735576581) (INE).
 
+Introduction to control theory. https://fab.cba.mit.edu/classes/865.21/topics/control/
+
 
 
 
@@ -99,11 +100,6 @@ If you are new to contributing to open source, [this guide](https://opensource.g
 
 This software is under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
 
-
-
-# OptimizePlan
-Receding horizon planning as in Loke and Dave's
-https://github.com/lokehagberg/rhp
 
 ## Documentation
 Documentation (work in progress) can be found in https://pablovegan.github.io/Economic-Planning/api/
