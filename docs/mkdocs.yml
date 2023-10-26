@@ -67,7 +67,6 @@ plugins:
       execute: false
       include_source: true
       ignore_h1_titles: True
-      theme: dark
 
 markdown_extensions:
   - pymdownx.snippets:
