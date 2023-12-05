@@ -10,19 +10,7 @@
 A simple example package for economic planning.
 
 ## Documentation and examples
-Documentation and examples can be found in https://pablovegan.github.io/QubitApproximant/.
-
-## To do list
-
-- [x] Add Spain and Sweden examples.
-- [ ] Check Gekko optimization library https://machinelearning.byu.edu/
-- [ ] Add ecological constraints.
-- [ ] Add examples documentation.
-- [ ] Api to communicate with the planning algorithm.
-- [ ] Add tests.
-- [ ] Improve readme.
-- [ ] Decide a good name for the package (PlanPy? —already taken apparently—, Cybersyn?).
-- [ ] Save constraints dual values with `dual_value` attribute.
+Documentation and examples can be found in [https://pablovegan.github.io/QubitApproximant/](https://pablovegan.github.io/Economic-Planning/).
 
 ## Installation
 
@@ -87,8 +75,6 @@ Spanish supply-use tables can be found in the website of the [National Statistic
 Introduction to control theory. https://fab.cba.mit.edu/classes/865.21/topics/control/
 
 
-
-
 ## Contributing
 
 We appreciate and welcome contributions. For major changes, please open an issue first
@@ -99,10 +85,3 @@ If you are new to contributing to open source, [this guide](https://opensource.g
 ## License
 
 This software is under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
-
-
-## Documentation
-Documentation (work in progress) can be found in https://pablovegan.github.io/Economic-Planning/api/
-
-## Data
-
