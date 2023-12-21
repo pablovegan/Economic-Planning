@@ -10,7 +10,7 @@
 A simple example package for economic planning.
 
 ## Documentation and examples
-Documentation and examples can be found in [https://pablovegan.github.io/QubitApproximant/](https://pablovegan.github.io/Economic-Planning/).
+Documentation and examples can be found in https://pablovegan.github.io/Economic-Planning/.
 
 ## Installation
 
