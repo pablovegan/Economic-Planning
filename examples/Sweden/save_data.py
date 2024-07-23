@@ -1,13 +1,13 @@
 """Save the supply-use tables and other data needed for planning."""
 
-from os.path import join
+from pathlib import Path
 import pickle
 
 import numpy as np
 from pandas import DataFrame, Series, concat, read_excel
 from scipy.sparse import csr_matrix
 
-from cybersyn import Economy
+from cybersyn import Economy, TargetEconomy
 
 
 def load_excel(
@@ -29,16 +29,16 @@ if __name__ == "__main__":
     print("Starting...")
 
     supply, use_domestic, use_import = [], [], []
-    target_export, target_domestic = [], []
+    target_export, target_domestic, target_import = [], [], []
     prices_export, prices_import = [], []
     worked_hours = []
 
     sheet_names = ["2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016"]
 
-    MAIN_PATH = join("examples", "Sweden", "data")
+    MAIN_PATH = Path("examples", "Sweden", "data")
 
     for sheet_name in sheet_names:
-        excel_path = join(MAIN_PATH, "nrio_sut_181108.xlsx")
+        excel_path = Path(MAIN_PATH, "nrio_sut_181108.xlsx")
 
         supply_matrix = csr_matrix(load_excel(excel_path, sheet_name, 159, 3, 218, 61))
         supply.append(supply_matrix)
@@ -54,6 +54,8 @@ if __name__ == "__main__":
 
         target_export_vector = load_excel(excel_path, sheet_name, 4, 78, 63, 78).flatten()
         target_export.append(target_export_vector)
+
+        target_import.append(np.zeros_like(target_export_vector))  # no target import
 
         final_total_vector = load_excel(excel_path, sheet_name, 4, 79, 63, 79).flatten()
         target_domestic_vector = final_total_vector - target_export_vector
@@ -79,6 +81,7 @@ if __name__ == "__main__":
 
         target_export.insert(idx, (target_export[i + 1] + target_export[i]) / 2)
         target_domestic.insert(idx, (target_domestic[i + 1] + target_domestic[i]) / 2)
+        target_import.insert(idx, (target_import[i + 1] + target_import[i]) / 2)
 
         worked_hours.insert(idx, (worked_hours[i + 1] + worked_hours[i]) / 2)
 
@@ -92,7 +95,7 @@ if __name__ == "__main__":
     """
 
     product_names = read_excel(
-        join(MAIN_PATH, "posternas_namn.xlsx"),
+        Path(MAIN_PATH, "posternas_namn.xlsx"),
         sheet_name="SUP10",
         usecols=range(3 - 1, 3),
         skiprows=range(7 - 2),
@@ -107,8 +110,6 @@ if __name__ == "__main__":
         use_domestic=use_domestic,
         use_import=use_import,
         depreciation=depreciation,
-        target_domestic=target_domestic,
-        target_export=target_export,
         prices_import=prices_import,
         prices_export=prices_export,
         worked_hours=worked_hours,
@@ -116,7 +117,16 @@ if __name__ == "__main__":
         sector_names=None,
     )
 
-    with open(join(MAIN_PATH, "swedish_economy.pkl"), "wb") as f:
+    target_economy = TargetEconomy(
+        domestic=target_domestic,
+        imports=target_import,
+        exports=target_export,
+    )
+
+    with Path(MAIN_PATH, "economy.pkl").open("wb") as f:
         pickle.dump(economy.model_dump(), f)
+
+    with Path(MAIN_PATH, "target_economy.pkl").open("wb") as f:
+        pickle.dump(target_economy.model_dump(), f)
 
     print("Finished.")
