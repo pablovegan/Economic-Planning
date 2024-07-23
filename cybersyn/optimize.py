@@ -6,7 +6,7 @@ Classes:
     ErrorPeriods
     OptimizePlan
 
-# TODO:
+TODO:
     Input targets as an object in optimizer?
         - Target domestic
         - Target export
@@ -117,7 +117,7 @@ class OptimizePlan:
         horizon_periods: int,
         revise_periods: int,
         economy: Economy,
-        ecology: Ecology = None,
+        ecology: Ecology | None = None,
     ) -> None:
         self.periods: int = periods
         self.horizon_periods: int = horizon_periods
@@ -142,8 +142,8 @@ class OptimizePlan:
     def __call__(
         self,
         target_economy: TargetEconomy,
-        target_ecology: TargetEcology,
-        init_surplus: NDArray = None,
+        target_ecology: TargetEcology | None = None,
+        init_surplus: NDArray | None = None,
         init_export_deficit: float = 0,
     ) -> PlannedEconomy:
         """Optimize the plan over the specified periods and horizon.
@@ -166,7 +166,7 @@ class OptimizePlan:
         init_surplus = np.zeros(self.economy.products) if init_surplus is None else init_surplus
 
         self.optimize_period(0, target_economy, target_ecology, init_surplus, init_export_deficit)
-        for period in range(1, self.periods, self.revise_periods):
+        for period in range(self.revise_periods, self.periods, self.revise_periods):
             self.optimize_period(
                 period,
                 target_economy,
