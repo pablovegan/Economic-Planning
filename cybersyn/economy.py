@@ -126,7 +126,7 @@ class TargetEconomy(BaseModel):
     def equal_periods(cls, matrices: MatrixList, info: FieldValidationInfo) -> MatrixList:
         if "domestic" in info.data and len(matrices) != len(info.data["domestic"]):
             raise ValueError(
-                f"\n{info.field_name} and supply don't have the same number of time periods.\n\n"
+                f"\n{info.field_name} and domestic don't have the same number of time periods.\n\n"
             )
         return matrices
 
