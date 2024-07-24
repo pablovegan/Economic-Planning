@@ -21,7 +21,10 @@ pip install
 
 ## Quick usage
 
+_Work in progress..._
 
+## To do
+[] Add pollutant plots to Spain's notebook
 
 
 ## Understanding the algorithm
