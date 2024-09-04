@@ -11,6 +11,7 @@ Classes:
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass, field
 
 from numpy.typing import NDArray
 from scipy.sparse import spmatrix
@@ -23,7 +24,7 @@ from ._exceptions import ShapesNotEqualError
 MatrixList = list[NDArray] | list[spmatrix]
 
 ECOLOGY_FIELDS = {
-    "pollutants_sector",
+    "pollutant_sector",
 }
 
 
@@ -32,13 +33,13 @@ class Ecology(BaseModel):
 
     model_config = dict(arbitrary_types_allowed=True)
 
-    pollutants_sector: list[NDArray] | list[spmatrix]
+    pollutant_sector: list[NDArray] | list[spmatrix]
     pollutant_names: list[str] | None = None
 
     @property
     def num_pollutants(self) -> int:
         """Number of products in the economy."""
-        return self.pollutants_sector[0].shape[0]
+        return self.pollutant_sector[0].shape[0]
 
 
 class TargetEcology(BaseModel):
@@ -80,3 +81,21 @@ class TargetEcology(BaseModel):
     def periods(self) -> int:
         """Number of products in the economy."""
         return len(self.pollutants)
+
+
+@dataclass
+class PlannedEcology:
+    """Dataclass that stores the whole planned economy.
+
+    Args:
+        activity (list[NDArray]): list with the planned activity for all sectors
+            in each period.
+        production (list[NDArray]): list with the planned production for all product
+            in each period.
+        surplus (list[NDArray]): The surplus production at the end of each period.
+        total_import (list[NDArray]): list of total imports in each period.
+        export_deficit (list[float]): list export deficit at the end of each period.
+        worked_hours (list[float]): list of total worked hours in each period.
+    """
+
+    pollutants: list[NDArray] = field(default_factory=list)

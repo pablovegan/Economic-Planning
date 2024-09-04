@@ -21,8 +21,8 @@ from cvxpy import Minimize, Problem, Variable, Constraint, multiply
 import numpy as np
 from numpy.typing import NDArray
 
-from .economy import Economy, PlannedEconomy, TargetEconomy
-from .ecology import Ecology, TargetEcology
+from .economy import Economy, TargetEconomy, PlannedEconomy
+from .ecology import Ecology, TargetEcology, PlannedEcology
 
 
 class InfeasibleProblem(Exception):
@@ -126,7 +126,8 @@ class OptimizePlan:
         self.ecology = ecology
         self._validate_plan(economy)
 
-        self.planned = PlannedEconomy()
+        self.planned_economy = PlannedEconomy()
+        self.planned_ecology = PlannedEcology()
 
     def _validate_plan(self, economy: Economy) -> None:
         "Validate that the time periods are compatible."
@@ -155,6 +156,7 @@ class OptimizePlan:
                 time period. Defaults to None.
         """
         self.production, self.surplus, self.export_deficit, self.worked_hours = [], [], [], []
+        self.produced_pollutants = []
         self.activity = [  # Industrial activity is set as nonnegative
             Variable(self.economy.sectors, name=f"activity_{t}", nonneg=True)
             for t in range(self.periods + self.horizon_periods - 1)
@@ -171,10 +173,10 @@ class OptimizePlan:
                 period,
                 target_economy,
                 target_ecology,
-                self.planned.surplus[-1],
-                self.planned.export_deficit[-1],
+                self.planned_economy.surplus[-1],
+                self.planned_economy.export_deficit[-1],
             )
-        return self.planned
+        return self.planned_economy, self.planned_ecology
 
     def optimize_period(
         self,
@@ -213,12 +215,13 @@ class OptimizePlan:
         """Save the value of the quantities we are interested in"""
         for extra_periods in range(min(self.revise_periods, self.periods - period)):
             t = period + extra_periods
-            self.planned.activity.append(self.activity[t].value)
-            self.planned.production.append(self.production[t].value)
-            self.planned.surplus.append(self.surplus[t].value)
-            self.planned.total_import.append(self.total_import[t].value)
-            self.planned.export_deficit.append(self.export_deficit[t].value)
-            self.planned.worked_hours.append(self.worked_hours[t].value)
+            self.planned_economy.activity.append(self.activity[t].value)
+            self.planned_economy.production.append(self.production[t].value)
+            self.planned_economy.surplus.append(self.surplus[t].value)
+            self.planned_economy.total_import.append(self.total_import[t].value)
+            self.planned_economy.export_deficit.append(self.export_deficit[t].value)
+            self.planned_economy.worked_hours.append(self.worked_hours[t].value)
+            self.planned_ecology.pollutants.append(self.produced_pollutants[t].value)
 
     def cost(self, period: int) -> Variable:
         r"""Create the cost function to optimize and save the total worked hours in each period.
@@ -294,7 +297,7 @@ class OptimizePlan:
             list: Export constraints.
         """
         constraints = []
-        for t in range(period, period + self.revise_periods):
+        for t in range(period, period + self.horizon_periods):
             total_price_export = self.economy.prices_export[t] @ target_economy.exports[t]
             total_price_import = self.economy.prices_import[t] @ self.total_import[t]
             # economy.use_import[t] @ self.activity[t] + self.target_import[t]
@@ -321,7 +324,7 @@ class OptimizePlan:
         realloc_low_limit = np.array([1 - realloc_coef] * self.economy.sectors)
         realloc_upper_limit = np.array([1 + realloc_coef] * self.economy.sectors)
         constraints = []
-        for t in range(period, period + self.revise_periods):
+        for t in range(period, period + self.horizon_periods):
             if t == 0:  # No restrictions in the first period
                 continue
             constraints.append(
@@ -335,8 +338,10 @@ class OptimizePlan:
     def pollutants_constraint(self, period: int, target_ecology: TargetEcology) -> list[Constraint]:
         r"""Maximum pollution allowed."""
         constraints = []
-        for t in range(period, period + self.revise_periods):
-            constraints.append(
-                self.ecology.pollutants_sector[t] @ self.activity[t] <= target_ecology.pollutants[t]
-            )
+        for t in range(period, period + self.horizon_periods):
+            produced_pollutants = self.ecology.pollutant_sector[t] @ self.activity[t]
+            constraints.append(produced_pollutants <= target_ecology.pollutants[t])
+            # Record the planned production and the surplus production in the revised periods
+            if t <= period + self.revise_periods - 1 and t <= self.periods - 1:
+                self.produced_pollutants.append(produced_pollutants)
         return constraints
