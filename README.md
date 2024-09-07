@@ -24,7 +24,7 @@ pip install
 _Work in progress..._
 
 ## To do
-- [ ] Add pollutant plots to Spain's notebook
+- [ ] Add other nonlinear cost functions (e.g. harmony function)
 
 
 ## Understanding the algorithm
