@@ -16,12 +16,12 @@ Documentation and examples can be found in https://pablovegan.github.io/Economic
 
 With `pip`:
 ```console
-pip install 
+pip install git+https://github.com/pablovegan/Economic-Planning.git
 ```
 
 ## Quick usage
 
-_Work in progress..._
+See the notebooks of planning of the [Spanish](https://github.com/pablovegan/Economic-Planning/blob/main/examples/Spain/spain.ipynb) and [Swedish](https://github.com/pablovegan/Economic-Planning/blob/main/examples/Sweden/sweden.ipynb) economies.
 
 ## To do
 - [ ] Add other nonlinear cost functions (e.g. harmony function)
