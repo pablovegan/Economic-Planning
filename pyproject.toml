@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 
-name = "cybersyn"
+name = "planning"
 authors = [{ name = "Pablo V. Parellada" }]
 description = "Simple economic planning package using linear programming."
 readme = "README.md"
@@ -62,10 +62,10 @@ documentation = "https://pablovegan.github.io/Economic-Planning"
 
 [tool.setuptools]
 platforms = ["unix", "linux", "osx", "cygwin", "win32"]
-packages = ["cybersyn"]                                 # optional
+packages = ["planning"]                                 # optional
 
 [tool.setuptools.dynamic]
-version = { attr = "cybersyn._version.__version__" }
+version = { attr = "planning._version.__version__" }
 
 
 ######## Tools

@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, read_excel
 from scipy.sparse import csr_matrix
 
-from cybersyn import Ecology, TargetEcology
+from planning import Ecology, TargetEcology
 
 
 def load_excel(

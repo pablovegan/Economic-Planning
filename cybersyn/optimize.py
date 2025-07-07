@@ -17,7 +17,7 @@ TODO:
 import logging
 from math import ceil
 
-from cvxpy import Minimize, Problem, Variable, Constraint, multiply
+from cvxpy import Minimize, Maximize, Problem, Variable, Constraint, multiply
 import numpy as np
 from numpy.typing import NDArray
 
@@ -60,6 +60,10 @@ class ErrorPeriods(Exception):
             "or equal to the number of periods we need to optimize our plan."
         )
         super().__init__(self.message)
+
+
+def harmony(x):
+    return -1 / (x)
 
 
 class OptimizePlan:
@@ -113,15 +117,9 @@ class OptimizePlan:
 
     def __init__(
         self,
-        periods: int,
-        horizon_periods: int,
-        revise_periods: int,
         economy: Economy,
         ecology: Ecology | None = None,
     ) -> None:
-        self.periods: int = periods
-        self.horizon_periods: int = horizon_periods
-        self.revise_periods: int = revise_periods
         self.economy = economy
         self.ecology = ecology
         self._validate_plan(economy)
@@ -140,8 +138,27 @@ class OptimizePlan:
             logging.error("ErrorPeriods exception raised.")
             raise ErrorPeriods
 
+    def _initialize_plan_variables(self):
+        """Initialize variables needed for the optimization algorithm."""
+        self.production = []
+        self.surplus = []
+        self.export_deficit = []
+        self.worked_hours = []
+        self.produced_pollutants = []
+        self.activity = [  # Industrial activity is set as nonnegative
+            Variable(self.economy.sectors, name=f"activity_{t}", nonneg=True)
+            for t in range(self.periods + self.horizon_periods - 1)
+        ]
+        self.total_import = [  # Imports are set as nonnegative
+            Variable(self.economy.products, name=f"total_import_{t}", nonneg=True)
+            for t in range(self.periods + self.horizon_periods - 1)
+        ]
+
     def __call__(
         self,
+        periods: int,
+        horizon_periods: int,
+        revise_periods: int,
         target_economy: TargetEconomy,
         target_ecology: TargetEcology | None = None,
         init_surplus: NDArray | None = None,
@@ -155,16 +172,11 @@ class OptimizePlan:
             init_export_deficit (float, optional): The export deficit at the initial
                 time period. Defaults to None.
         """
-        self.production, self.surplus, self.export_deficit, self.worked_hours = [], [], [], []
-        self.produced_pollutants = []
-        self.activity = [  # Industrial activity is set as nonnegative
-            Variable(self.economy.sectors, name=f"activity_{t}", nonneg=True)
-            for t in range(self.periods + self.horizon_periods - 1)
-        ]
-        self.total_import = [  # Imports are set as nonnegative
-            Variable(self.economy.products, name=f"total_import_{t}", nonneg=True)
-            for t in range(self.periods + self.horizon_periods - 1)
-        ]
+        self._validate_plan(self.economy)
+        self.periods: int = periods
+        self.horizon_periods: int = horizon_periods
+        self.revise_periods: int = revise_periods
+        self._initialize_plan_variables()
         init_surplus = np.zeros(self.economy.products) if init_surplus is None else init_surplus
 
         self.optimize_period(0, target_economy, target_ecology, init_surplus, init_export_deficit)
@@ -196,12 +208,13 @@ class OptimizePlan:
         Raises:
             InfeasibleProblem: Exception raised for infeasible LP problems in the input salary.
         """
-        constraints = self.production_constraints(period, target_economy, surplus)
-        constraints += self.export_constraints(period, target_economy, export_deficit)
+        constraints = self.export_constraints(period, target_economy, export_deficit)
+        # constraints += self.production_constraints(period, target_economy, surplus)
         constraints += self.labor_realloc_constraint(period)
         if self.ecology is not None:
             constraints += self.pollutants_constraint(period, target_ecology)
-        objective = Minimize(self.cost(period))
+        # objective = Minimize(self.cost(period))
+        objective = Minimize(self.cost_harmony(period, target_economy, surplus))
         problem = Problem(objective, constraints)
         problem.solve(verbose=False)
 
@@ -223,7 +236,41 @@ class OptimizePlan:
             self.planned_economy.worked_hours.append(self.worked_hours[t].value)
             self.planned_ecology.pollutants.append(self.produced_pollutants[t].value)
 
-    def cost(self, period: int) -> Variable:
+    def cost_harmony(
+        self, period: int, target_economy: TargetEconomy, surplus: NDArray
+    ) -> Variable:
+        r"""Create the cost function to optimize and save the total worked hours in each period.
+        $$    \text{minimize}\: \sum_{t=0}^T c_t \cdot x_t  $$
+        Args:
+            period (int): current period of the optimization.
+        Returns:
+            Variable: Cost function to optimize.
+        """
+        cost = 0
+        for t in range(period, period + self.horizon_periods):
+            supply_use = (
+                self.economy.supply[t] - self.economy.use_domestic[t] - self.economy.use_import[t]
+            )
+            production = supply_use @ self.activity[t]
+            final_planned = (
+                self.economy.depreciation[t] @ surplus + production + self.total_import[t]
+            )
+            final_target = (
+                target_economy.domestic[t] + target_economy.exports[t] + target_economy.imports[t]
+            )
+            surplus = final_planned - final_target
+
+            # cost += harmony(sum(surplus / final_target))
+            cost += sum(harmony(surplus) @ harmony(surplus))
+            # Record the planned production and the surplus production in the revised periods
+            if t <= period + self.revise_periods - 1 and t <= self.periods - 1:
+                self.surplus.append(surplus)
+                self.production.append(production)
+                self.worked_hours.append(self.economy.worked_hours[t] @ self.activity[t])
+
+        return cost
+
+    def cost_hours(self, period: int) -> Variable:
         r"""Create the cost function to optimize and save the total worked hours in each period.
         $$    \text{minimize}\: \sum_{t=0}^T c_t \cdot x_t  $$
         Args:

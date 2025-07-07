@@ -1,11 +1,11 @@
-site_name: OptimizePlan
+site_name: Economic Planning
 site_description: "An economic planning package that uses linear programming."
 
 repo_url: https://github.com/pablovegan/Economic-Planning
 repo_name: pablovegan/Economic-Planning
 
 docs_dir: ./
-watch: [../README.md, ../cybersyn]
+watch: [../README.md, ../planning]
 
 nav:
   - Introduction: index.md
